@@ -172,7 +172,7 @@ function writeLocal(userId: string | null, state: CompeteState, savedAt: string)
   }
 }
 
-export function CompeteProvider({ children }: { children: ReactNode }) {
+export function CompeteProvider({ children, passive = false }: { children: ReactNode; passive?: boolean }) {
   const { pending: bootCovering, report: reportBootCover } = useBootRequests();
   const { user, loading, offlineMode } = useAuth();
   const userId = user?.id ?? null;
@@ -430,6 +430,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
     }
 
+    if (passive && local.cached) {
+      settle(local.state, local.savedAt, "ready");
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (!stateRef.current) {
       statusRef.current = "loading";
       setLoadStatus("loading");
@@ -486,7 +493,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt, offlineMode, loading, publish, scheduleSave, userId, userDisplayName, userEmail]);
+  }, [attempt, offlineMode, loading, passive, publish, scheduleSave, userId, userDisplayName, userEmail]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;
@@ -606,7 +613,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [publish]);
 
   useEffect(() => {
-    if (loading || !userId || offlineMode) return;
+    if (loading || !userId || offlineMode || passive) return;
     const kick = () => {
       if (document.visibilityState === "hidden") return;
       void refresh({ ifStale: true });
@@ -617,11 +624,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", kick);
       window.removeEventListener("online", kick);
     };
-  }, [offlineMode, loading, refresh, userId]);
+  }, [offlineMode, loading, passive, refresh, userId]);
 
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
-    if (loading || !userId || offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;
+    if (loading || !userId || offlineMode || passive || loadStatus !== "ready" || !connectedPullProviders) return;
     const PULL_SYNC_COOLDOWN_MS = 5 * 60_000;
     let stopped = false, running = false;
     const sync = async (force = false) => {
@@ -648,7 +655,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", kick);
     window.addEventListener("online", kick);
     return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", kick); window.removeEventListener("online", kick); };
-  }, [loading, userId, offlineMode, loadStatus, refresh, connectedPullProviders]);
+  }, [loading, userId, offlineMode, passive, loadStatus, refresh, connectedPullProviders]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";

@@ -1,10 +1,9 @@
-import { APPEARANCE_COOKIE, appearanceVariables, parseAppearance } from "@/theme/app-colors";
+import { appearanceVariables, parseAppearance } from "@/theme/app-colors";
 import { typographyVariables } from "@/ui/section";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { cookies } from "next/headers";
 import { Providers } from "@/components/providers";
-import { getTheme, parseThemeId } from "@/theme/catalog";
+import { getTheme } from "@/theme/catalog";
 import "./globals.css";
 import "@/theme/themes.css";
 
@@ -41,22 +40,22 @@ export const metadata: Metadata = {
   description: "Everyday training, weekly fields, and progress with your crew.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const jar = await cookies();
-  const appearance = parseAppearance(jar.get(APPEARANCE_COOKIE)?.value);
-  const theme = getTheme(parseThemeId(jar.get("fb_theme")?.value));
+  const appearance = parseAppearance(undefined);
+  const theme = getTheme();
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       style={{ ...typographyVariables(), ...appearanceVariables(appearance) }}
       data-appearance={appearance}
       data-theme={theme.id}
       className={`${display.variable} ${body.variable} ${formType.variable} ${rallyDisplay.variable} ${rallyComic.variable} ${overtaek.variable} ${theme.htmlClass}`}
     >
       <body>
-        <Providers initialTheme={theme.id} initialAppearance={appearance}>{children}</Providers>
+        <Providers initialTheme={null} initialAppearance={null}>{children}</Providers>
       </body>
     </html>
   );

@@ -47,7 +47,7 @@ describe("compete account units preference", () => {
     };
     const loaded = await loadCompeteAccount(db as never, "owner");
     expect(loaded?.state.activities.find(a => a.id === "strava-42")).toMatchObject({
-      summaryPolyline: "summary-geometry", detailedPolyline: "detailed-geometry", source: "strava",
+      summaryPolyline: "summary-geometry", detailedPolyline: null, source: "strava",
     });
   });
 

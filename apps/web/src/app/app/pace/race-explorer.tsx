@@ -5,7 +5,6 @@ import { AppHeading, typographyStyle } from "@/ui/section";
 import { Fragment, memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   analyzeRaceSplits,
-  RACE_CATEGORY_FILTERS,
   RACE_DISTANCES,
   RACE_METERS,
   raceClock,
@@ -492,30 +491,6 @@ export function RaceExplorer({
       cancelled = true;
     };
   }, [saved.ready, savedIdsKey]);
-
-  // Warm only the active distance/edition's sibling sex filters when idle (avoids saturating DB on load)
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      for (const c of RACE_CATEGORY_FILTERS) {
-        if (controller.signal.aborted || c.value === sex) continue;
-        const key = `${distance}|${edition}|${c.value}|all||1`;
-        if (clientResultsCache.has(key)) continue;
-        const p = new URLSearchParams({ distance, sex: c.value, timeframe: "all", page: "1" });
-        if (edition) p.set("edition", edition);
-        try {
-          const res = await fetch(`/api/rankings?${p.toString()}`, { signal: controller.signal });
-          if (res.ok) {
-            clientResultsCache.set(key, (await res.json()) as RaceResultsPage);
-          }
-        } catch {}
-      }
-    }, 1200);
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [distance, sex, edition]);
 
   useEffect(() => {
     for (const edId of overlayIds) {
