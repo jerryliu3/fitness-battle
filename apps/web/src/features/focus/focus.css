@@ -2818,3 +2818,12 @@
 }
 .effort-header-boost .effort-header-popup { inset-inline: auto 0; }
 @media (prefers-reduced-motion: reduce) { .effort-header-track > span { transition: none; } }
+
+.history-import-reveal { display: grid; justify-items: center; gap: 24px; padding-block: 24px; }
+.history-import-reveal-value {
+  border-radius: 16px;
+  padding: 12px 24px;
+  background: var(--lime);
+  color: var(--app-text-on-action);
+  font: var(--type-display);
+}

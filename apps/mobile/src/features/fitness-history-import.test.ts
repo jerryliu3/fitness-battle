@@ -106,6 +106,11 @@ it("ignores an old import even after switching away and back to the same account
 it.each([false, true])("commits Strava history only on swipe (confirmed: %s)", async (confirmed) => {
   mock.request.mockImplementation(async (_url, _token, _path, options) => {
     if (options?.body?.days) return { lease: "ticket" };
+    if (options?.method === "PATCH") return { persisted: true, boost: {
+      multiplier: 3,
+      startsAt: new Date(Date.now() - 1000).toISOString(),
+      boostEndsAt: new Date(Date.now() + 86_400_000).toISOString(),
+    } };
     if (options?.body?.reviewHistory) {
       return { activities: [
         { id: "strava-a", provider: "strava", categorySlug: "running", startedAt: "2026-11-17T18:00:00Z", metricValue: 5000 },
@@ -126,6 +131,10 @@ it.each([false, true])("commits Strava history only on swipe (confirmed: %s)", a
   if (confirmed) {
     expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/sync", { method: "PATCH", body: { historyLease: "ticket", selected: ["strava-b"] } });
     expect(mock.refresh).toHaveBeenCalledWith({ skipSyncReview: true });
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("You earned an Effort Boost");
+    expect(mock.dismiss).not.toHaveBeenCalled();
+    await act(async () => button("Continue").props.onPress());
+    expect(mock.dismiss).toHaveBeenCalled();
   } else {
     expect(mock.request).toHaveBeenCalledWith("https://example.test", "alice-token", "/api/fitness/history", { method: "DELETE", body: { lease: "ticket" } });
     expect(mock.request.mock.calls.some(c => c[3]?.method === "PATCH")).toBe(false);

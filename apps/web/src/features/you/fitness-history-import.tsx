@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activityFromSample, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
+import { activeMultiplier, activityFromSample, type TimedMultiplier, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -32,6 +32,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState(90);
   const [busy, setBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ pending: true } | { pending: false; boost?: TimedMultiplier } | null>(null);
   const [error, setError] = useState("");
   const [review, setReview] = useState<{ lease: string; provider: ProviderId; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
@@ -72,16 +73,20 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     const confirmed = !quiet && Boolean(selected?.length);
     try {
       if (confirmed) {
-        await historyRequest("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
+        setConfirmation({ pending: true });
+        const result = await historyRequest<{ boost?: TimedMultiplier }>("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
         if (!mounted.current) return;
         setStatus({ completed: true, provider: review.provider, days: Number(days) });
         void refresh({ skipSyncReview: true });
+        setConfirmation({ pending: false, boost: result.boost });
+        return;
       } else {
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) });
       }
       if (mounted.current) dismiss.current();
     } catch (error) {
       if (mounted.current) {
+        setConfirmation(null);
         setError(error instanceof Error ? error.message : "Could not finish the history import.");
         setProvider(review.provider);
         await historyRequest("/api/fitness/history", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lease: review.lease }) }).catch(() => {});
@@ -122,6 +127,25 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
       flight.current = false;
       if (mounted.current) setBusy(false);
     }
+  }
+
+  if (confirmation) {
+    const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
+    const title = confirmation.pending ? "Finishing your import…" : boost ? "You earned an Effort Boost" : "History imported";
+    const body = confirmation.pending ? "Saving your selected workouts." : boost
+      ? "Your training history earned you a 30-day head start across all sports. Eligible training advances your Effort progression faster."
+      : "Your selected workouts are ready to view.";
+    const closeConfirmation = () => {
+      if (confirmation.pending) return;
+      setConfirmation(null);
+      dismiss.current();
+    };
+    return <Sheet open fullScreen title={title} body={body} onClose={closeConfirmation}>
+      <div className="history-import-reveal">
+        {boost && <strong className="history-import-reveal-value">{boost.label}</strong>}
+        {!confirmation.pending && <button type="button" className="fb-btn" onClick={closeConfirmation}>Continue</button>}
+      </div>
+    </Sheet>;
   }
 
   if (review && state) return <SyncReview receipt={review.receipt} state={state} onComplete={finishReview} />;
