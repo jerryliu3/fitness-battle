@@ -101,14 +101,35 @@ export function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
   return byUser;
 }
 
+export function resolveCrewWeekMetric(
+  input: Pick<CrewWeekRelayInput, "format" | "sport" | "contract">,
+): CrewContractMetric {
+  return (
+    input.contract?.metric ??
+    (input.format === "personal_target" || input.sport === "strength"
+      ? "sessions"
+      : "distance_m")
+  );
+}
+
+function crewMemberWeekValueForMetric(
+  row: { distance: number; movingSec: number; sessions: number },
+  metric: CrewContractMetric,
+): number {
+  if (metric === "sessions") return row.sessions;
+  if (metric === "moving_sec") return row.movingSec;
+  if (metric === "contributors") return row.sessions > 0 ? 1 : 0;
+  return row.distance;
+}
+
 export function crewMemberWeekValue(
   entries: CrewWeekRelayInput["entries"],
   userId: string,
-  sessions: boolean,
+  metric: CrewContractMetric,
 ): number {
   const row = crewEntryTotals(entries).get(userId);
   if (!row) return 0;
-  return sessions ? row.sessions : row.distance;
+  return crewMemberWeekValueForMetric(row, metric);
 }
 
 export function filterCrewMembersWithPeriodActivity<
@@ -116,13 +137,13 @@ export function filterCrewMembersWithPeriodActivity<
 >(
   members: readonly T[],
   entries: CrewWeekRelayInput["entries"],
-  sessions: boolean,
+  metric: CrewContractMetric,
 ): T[] {
   const totals = crewEntryTotals(entries);
   return members.filter((m) => {
     const row = totals.get(m.user_id);
     if (!row) return false;
-    return (sessions ? row.sessions : row.distance) > 0;
+    return crewMemberWeekValueForMetric(row, metric) > 0;
   });
 }
 
@@ -186,11 +207,7 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
     Number(input.contract.target) > 0
       ? Number(input.contract.target)
       : null;
-  const metric: CrewContractMetric =
-    input.contract?.metric ??
-    (input.format === "personal_target" || input.sport === "strength"
-      ? "sessions"
-      : "distance_m");
+  const metric = resolveCrewWeekMetric(input);
   const sessions = metric === "sessions";
   const distanceTarget =
     Number.isFinite(input.targetDistanceM) && Number(input.targetDistanceM) > 0

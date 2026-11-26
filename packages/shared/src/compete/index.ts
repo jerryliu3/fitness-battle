@@ -296,6 +296,7 @@ export {
   crewRelayRosterFootnote,
   crewEntryTotals,
   crewMemberWeekValue,
+  resolveCrewWeekMetric,
   filterCrewMembersWithPeriodActivity,
   type CrewRelayModel,
   type CrewWeekRelayInput,

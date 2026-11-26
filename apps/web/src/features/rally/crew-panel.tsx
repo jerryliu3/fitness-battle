@@ -6,7 +6,7 @@ import { RankAvatar } from "@/ui/rank-symbol";
 import { AppParagraph, AppText, AppHeading, typographyStyle } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { CrewOverview } from "./crew-overview";
@@ -26,14 +26,15 @@ import {
   crewInviteWebDestination,
   type SportId,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
   formatNoticeUnits,
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
+  formatCrewRelayVolume,
   humanizeCrewApiError,
+  resolveCrewWeekMetric,
 } from "@fitness-battle/shared";
+import { useCrewPassport } from "./use-crew-passport";
 import { CrewInviteLanding } from "./crew-invite-landing";
 import { useCrewInviteFlow } from "./use-crew-invite-flow";
 import { NumberStepper } from "@/ui/number-stepper";
@@ -325,13 +326,54 @@ export function CrewPanel() {
   const weekKey = dayKey(weeklyPeriodBounds(state ? competeNow(state) : new Date()).startsAt, APP_TIMEZONE);
   const restKey = `${user?.id}:${crew.id}`;
   const resting = offlineMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
-  const unitLabel = distanceUnitLabel(state?.units);
-  const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
-  const memberTotal = (id: string) =>
-    crewMemberWeekValue(entries, id, sessionsMetric);
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
+  const passportInput = useMemo(
+    () => ({
+      members: members.map((m) => ({
+        user_id: m.user_id,
+        display_name: m.display_name,
+        avatar_url: m.avatar_url,
+      })),
+      entries,
+      sport: crew.sport,
+      format: crew.format,
+      targetSessions: crew.target_sessions,
+      targetDistanceM: crew.journey_km * 1000,
+      previousDistanceM,
+      now: (state ? competeNow(state) : new Date()).toISOString(),
+      units: state?.units,
+    }),
+    [
+      members,
+      entries,
+      crew.sport,
+      crew.format,
+      crew.target_sessions,
+      crew.journey_km,
+      previousDistanceM,
+      state,
+    ],
+  );
+  const { data: crewPassport } = useCrewPassport(crew.id, passportInput);
+  const weekContract = crewPassport?.contract
+    ? { metric: crewPassport.contract.metric, target: crewPassport.contract.target }
+    : null;
+  const weekMetric = resolveCrewWeekMetric({
+    format: crew.format,
+    sport: crew.sport,
+    contract: weekContract,
+  });
+  const memberTotal = (id: string) => crewMemberWeekValue(entries, id, weekMetric);
+  const memberContribution = (id: string) =>
+    formatCrewRelayVolume(
+      weekMetric === "sessions",
+      crew.sport as SportId,
+      memberTotal(id),
+      state?.units,
+      weekMetric,
+    );
   const shareOrigin =
     typeof window !== "undefined" ? window.location.origin : "https://overtaek.xyz";
 
@@ -559,10 +601,10 @@ export function CrewPanel() {
           </>
         ) : panel === "members" ? (
           <ul className="focus-member-list">
-            {crewLineup(members, entries, crew.sport).map((m) => (
+            {crewLineup(members, entries, crew.sport, weekMetric).map((m) => (
               <li key={m.user_id}>
                 <RankAvatar rank={rankSymbolForScore(m.effort_score)} src={m.avatar_url} name={m.display_name} size={64} />
-                <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
+                <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{memberContribution(m.user_id)} this week</AppParagraph></div>
                 <AppText as="small" role="caption" secondary>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
               </li>
             ))}
@@ -807,12 +849,10 @@ export function CrewPanel() {
                 This week's contribution
               </span>
               <div style={{ ...typographyStyle("metric"), margin: "6px 0" }}>
-                {sessionsMetric
-                  ? `${memberTotal(viewingMember.user_id)} sessions`
-                  : `${formatDistanceM(memberTotal(viewingMember.user_id), state?.units)} ${unitLabel}`}
+                {memberContribution(viewingMember.user_id)}
               </div>
               <span style={{ ...typographyStyle("body"), color: "var(--muted)" }}>
-                {crew.name} · {crew.sport} · {Math.round(memberTotal(viewingMember.user_id) / Math.max(1, members.reduce((sum, m) => sum + memberTotal(m.user_id), 0)) * 100)}% of crew total
+                {crew.name} · {Math.round(memberTotal(viewingMember.user_id) / Math.max(1, members.reduce((sum, m) => sum + memberTotal(m.user_id), 0)) * 100)}% of crew total
               </span>
             </div>
             <button

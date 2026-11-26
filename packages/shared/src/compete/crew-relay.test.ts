@@ -54,8 +54,9 @@ it("labels a configured volume goal separately from missing prior-week history",
 });
 it("shares period totals and active-member filtering across crew surfaces",()=>{
  const entries=[{user_id:"a",distance_m:5000,moving_sec:1200},{user_id:"b",distance_m:0,moving_sec:0}];
- expect(crewMemberWeekValue(entries,"a",false)).toBe(5000);
- expect(filterCrewMembersWithPeriodActivity([{user_id:"a"},{user_id:"b"}],entries,false).map(m=>m.user_id)).toEqual(["a"]);
+ expect(crewMemberWeekValue(entries,"a","distance_m")).toBe(5000);
+ expect(crewMemberWeekValue(entries,"a","moving_sec")).toBe(1200);
+ expect(filterCrewMembersWithPeriodActivity([{user_id:"a"},{user_id:"b"}],entries,"distance_m").map(m=>m.user_id)).toEqual(["a"]);
 });
 it("omits members with zero distance or sessions from the relay model",()=>{
  const result=crewWeekRelay({members:[{user_id:"a",display_name:"A"},{user_id:"b",display_name:"B"}],entries:[{user_id:"a",distance_m:5000,moving_sec:1200}],format:"volume",sport:"running",targetSessions:4,targetDistanceM:10000,previousDistanceM:null});
