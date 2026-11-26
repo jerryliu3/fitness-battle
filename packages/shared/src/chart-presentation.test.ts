@@ -1,3 +1,4 @@
+import { createEmptyEffortState } from "./compete/effort-score";
 import { initializeEffortAccounts } from "./compete/effort-account";
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
@@ -326,4 +327,37 @@ it("plots workouts from a bulk sync at their own start times in the open effort 
   expect(points[1]!.value).toBe(chart.value);
   const withoutLateWorkout = { ...state, activities: state.activities.filter(activity => activity.id !== "last-week") };
   expect(chart.value).toBe(effortScoreLine(withoutLateWorkout, "open", "week", now).value);
+});
+
+it("starts the backfilled score at the award and suppresses older score events", () => {
+  const now = new Date("2026-11-27T17:00:00Z");
+  const state = freshState(now);
+  state.effortAccounts = {
+    running: {
+      state: createEmptyEffortState(),
+      nextWeek: "2026-11-30",
+      historyAnchor: { occurredAt: "2026-11-26T19:49:00Z", score: 395 },
+    },
+  };
+  state.ratings[0]!.openElo = 420;
+  state.effortScoreEvents = [
+    { id: "old", sport: "running", track: "open", occurredAt: "2026-11-24T17:00:00Z", scoreBefore: 900, scoreAfter: 4000 },
+    { id: "reset", sport: "running", track: "open", occurredAt: "2026-11-26T19:49:00Z", scoreBefore: 4000, scoreAfter: 395 },
+    { id: "new", sport: "running", track: "open", occurredAt: "2026-11-27T14:00:00Z", scoreBefore: 395, scoreAfter: 420 },
+  ];
+
+  const chart = effortScoreLine(state, "open", "week", now);
+  expect(chart.points.find(point => point.id === "effort-start")).toMatchObject({ value: "395", label: "Nov 26, 2:49 PM" });
+  expect(chart.points.find(point => point.id === "new")?.value).toBe("420");
+  expect(chart.points.some(point => ["900", "4000"].includes(point.value))).toBe(false);
+  expect(chart.points[0]?.value).toBe("0");
+  expect(chart.yTicks[0]?.label).toBe("0");
+});
+
+it("keeps the Effort axis nonnegative at low scores", () => {
+  const now = new Date("2026-11-27T17:00:00Z");
+  const state = freshState(now);
+  const chart = effortScoreLine(state, "open", "week", now);
+  expect(chart.yTicks[0]?.label).toBe("0");
+  expect(chart.yTicks.every(tick => Number(tick.label) >= 0)).toBe(true);
 });

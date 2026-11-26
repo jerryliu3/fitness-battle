@@ -2,6 +2,7 @@ import { calculateLiveEffortScore } from "./compete/effort-score";
 import { mergeActivities } from "./compete/ledger";
 import { activityBaseTrainingXp, activityTrainingXp } from "./compete/training-xp";
 import { readAccountEffort } from './compete/effort-account';
+import { liveEffortFromActivities } from "./compete/effort-volume";
 import { countsForTraining } from "./compete/journal";
 import { competeNow } from "./compete/engine";
 import type { CompeteState } from "./compete/sports";
@@ -52,6 +53,7 @@ export interface OpenLineTimeline {
   showTime?: boolean;
   step?: boolean;
   zeroMin?: boolean;
+  clampYToZero?: boolean;
   timeZone?: string;
 }
 
@@ -64,12 +66,14 @@ export function openLineModel(
   zeroMin = false,
 ): OpenLineModel {
   const width = 340, height = 172, top = 28, bottom = 146, left = 44, right = 326;
-  const values = rows.map(row => row.value);
+  const visibleValue = (value: number) => timeline?.clampYToZero ? Math.max(0, value) : value;
+  const values = rows.map(row => visibleValue(row.value));
   const low = values.length ? Math.min(...values) : 0, high = values.length ? Math.max(...values) : 1;
   const padding = Math.max(1, (high - low) * .12);
   // Score histories use a local domain; cumulative hour charts retain a zero floor.
   const floorZero = Boolean(zeroMin || timeline?.zeroMin);
-  const min = Math.floor(floorZero ? Math.min(0, low) : low - padding);
+  const paddedMin = Math.floor(floorZero ? Math.min(0, low) : low - padding);
+  const min = timeline?.clampYToZero ? Math.max(0, paddedMin) : paddedMin;
   const max = Math.ceil(high + padding);
   const y = (value: number) => bottom - (value - min) / (max - min || 1) * (bottom - top);
   const x = (i: number) => left + i / Math.max(1, slots - 1) * (right - left);
@@ -82,7 +86,7 @@ export function openLineModel(
   const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(crossesYear ? { year: "numeric" } : {}), timeZone: displayTz });
   const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: displayTz });
   const date = (value: string) => dateFormatter.format(new Date(value));
-  const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(row.value), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(row.value) }));
+  const points = rows.map((row, i) => ({ id: row.id, x: timeline ? timeX(row.date) : x(i), y: y(visibleValue(row.value)), label: timeline?.showTime ? `${date(row.date)}, ${timeFormatter.format(new Date(row.date))}` : date(row.date), value: format(visibleValue(row.value)) }));
   const trace = (pts: readonly { x: number; y: number }[]) => pts.flatMap((point, i) => [
     ...(timeline?.step && i ? [`${point.x.toFixed(1)},${pts[i - 1]!.y.toFixed(1)}`] : []),
     `${point.x.toFixed(1)},${point.y.toFixed(1)}`,
@@ -262,6 +266,13 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
     && Number.isFinite(Date.parse(event.occurredAt)) && Date.parse(event.occurredAt) <= now.getTime()
     && Number.isFinite(event.scoreBefore) && Number.isFinite(event.scoreAfter))
     .slice().sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id, "en", { numeric: true }));
+  const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
+  if (anchor && Date.parse(anchor.occurredAt) <= now.getTime()) {
+    return [
+      { id: "effort-start", occurredAt: anchor.occurredAt, scoreBefore: 0, scoreAfter: anchor.score },
+      ...recorded.filter(event => Date.parse(event.occurredAt) > Date.parse(anchor.occurredAt)),
+    ];
+  }
   const firstRecordedAt = recorded[0] ? Date.parse(recorded[0].occurredAt) : Infinity;
   const legacy = state.periodResults.filter(result => result.sport === state.primary && result.track === track
     && Number.isFinite(Date.parse(result.periodEnd)) && Date.parse(result.periodEnd) < firstRecordedAt
@@ -278,13 +289,18 @@ function liveWorkoutScoreRows(state: CompeteState, now: Date) {
   if (!account || sport === "walking" || account.nextWeek !== dayKey(start)) return [];
 
   const history = mergeActivities([], state.activities);
+  const historyStart = account.historyAnchor ? Date.parse(account.historyAnchor.occurredAt) : -Infinity;
   const workouts = history
-    .filter(activity => activity.sport === sport && Date.parse(activity.startedAt) >= start.getTime()
+    .filter(activity => activity.sport === sport && Date.parse(activity.startedAt) >= Math.max(start.getTime(), historyStart)
       && Date.parse(activity.startedAt) <= now.getTime() && activityBaseTrainingXp(activity) > 0)
     .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || a.id.localeCompare(b.id));
   let day = "", trainingXpBeforeToday = 0, trainingXpToday = 0;
   return workouts.map(activity => {
     const at = new Date(activity.startedAt);
+    if (account.starter) {
+      const { liveScore } = liveEffortFromActivities(state, sport, account.state, at, account.starter, account.trainingStartsAt);
+      return { id: `workout:${activity.id}`, date: at.toISOString(), value: liveScore };
+    }
     const workoutDay = dayKey(at);
     if (workoutDay !== day) {
       trainingXpBeforeToday += trainingXpToday;
@@ -309,6 +325,11 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
+  const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
+  const scoreAt = (at: Date) => {
+    if (anchor && at.getTime() < Date.parse(anchor.occurredAt)) return 0;
+    return readAccountEffort(state, state.primary, at)?.liveScore ?? effortScoreAt(events, at, current);
+  };
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
   const workouts = liveWorkoutScoreRows(state, now).filter(row => Date.parse(row.date) >= effectiveStart.getTime());
   const eventDays = new Set([
@@ -329,7 +350,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     dailyRows.push({
       id: `day:${key}`,
       date: at.toISOString(),
-      value: readAccountEffort(state, state.primary, at)?.liveScore ?? effortScoreAt(events, at, current),
+      value: scoreAt(at),
     });
   }
   const timeline = [
@@ -347,7 +368,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     rows.push({
       id: "baseline",
       date: effectiveStart.toISOString(),
-      value: readAccountEffort(state, state.primary, effectiveStart)?.liveScore ?? effortScoreAt(events, effectiveStart, current),
+      value: scoreAt(effectiveStart),
       inspectable: false,
     });
   }
@@ -368,7 +389,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
     }
   }
   rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false, timeZone: displayTz });
+  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false, clampYToZero: true, timeZone: displayTz });
   // Unknown award times remain gaps in the data. Dashed bridges connect the
   // known readings visually without asserting an award time in that interval.
   return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>
