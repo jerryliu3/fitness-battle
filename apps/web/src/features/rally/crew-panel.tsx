@@ -26,7 +26,6 @@ import {
   crewInviteWebDestination,
   type SportId,
   countsOnTrack,
-  formatNoticeUnits,
   crewMemberWeekValue,
   crewLineup,
   crewTargetSpec,
@@ -441,11 +440,6 @@ export function CrewPanel() {
           {note}
         </AppParagraph>
       )}
-      {data?.notices?.map((n) => (
-        <AppParagraph typographyRole="caption" className="fb-note" key={n.id}>
-          {formatNoticeUnits(n.body, state?.units)}
-        </AppParagraph>
-      ))}
       {!user && !inviteCode && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
