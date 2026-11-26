@@ -64,7 +64,7 @@ for key in "${KEYS[@]}"; do
     process.stdout.write(found);
   ' "$key" "$ENV_FILE")"
 
-  if [ -n "$val" ]; then
+  if [ -n "$val" ] && [ "$val" != "[SENSITIVE]" ]; then
     printf '%s' "$val" | gh secret set "$key"
     uploaded+=("$key")
   else
