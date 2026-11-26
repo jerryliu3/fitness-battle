@@ -37,7 +37,7 @@ export interface SportEffortAccount {
   nextWeek: string;
   starter?: TimedMultiplier;
   trainingStartsAt?: string;
-  historyAnchor?: { occurredAt: string; score: number };
+  historyAnchor?: { occurredAt: string; displayAt?: string; score: number };
 }
 export type EffortAccounts = Partial<Record<SportId, SportEffortAccount>>;
 const dateFor = (day:string)=>new Date(`${day}T12:00:00Z`);

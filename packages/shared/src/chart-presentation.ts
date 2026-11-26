@@ -269,7 +269,7 @@ function effortScoreEvents(state: CompeteState, track: "open" | "verified", now:
   const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
   if (anchor && Date.parse(anchor.occurredAt) <= now.getTime()) {
     return [
-      { id: "effort-start", occurredAt: anchor.occurredAt, scoreBefore: 0, scoreAfter: anchor.score },
+      { id: "effort-start", occurredAt: anchor.displayAt ?? anchor.occurredAt, scoreBefore: 0, scoreAfter: anchor.score },
       ...recorded.filter(event => Date.parse(event.occurredAt) > Date.parse(anchor.occurredAt)),
     ];
   }
@@ -317,17 +317,21 @@ function liveWorkoutScoreRows(state: CompeteState, now: Date) {
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
   const start = shiftZonedDay(now, -effortScoreLookbackDays(range), displayTz);
+  const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
   const available = earliestDataDate(state, now, createdAt) ?? now;
-  const effectiveStart = new Date(Math.max(start.getTime(), startOfZonedDay(available, displayTz).getTime()));
+  const anchorDate = anchor && Date.parse(anchor.displayAt ?? anchor.occurredAt);
+  const firstDate = anchorDate !== undefined && Number.isFinite(anchorDate) ? new Date(Math.min(available.getTime(), anchorDate)) : available;
+  const effectiveStart = new Date(Math.max(start.getTime(), startOfZonedDay(firstDate, displayTz).getTime()));
   const timelineStart = effectiveStart;
   const timelineEnd = shiftZonedDay(timelineStart, effortScoreLookbackDays(range) + 1, displayTz);
   const events = effortScoreEvents(state, track, now);
   const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
   const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
-  const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
   const scoreAt = (at: Date) => {
-    if (anchor && at.getTime() < Date.parse(anchor.occurredAt)) return 0;
+    if (anchor && at.getTime() < Date.parse(anchor.occurredAt)) {
+      return at.getTime() < Date.parse(anchor.displayAt ?? anchor.occurredAt) ? 0 : anchor.score;
+    }
     return readAccountEffort(state, state.primary, at)?.liveScore ?? effortScoreAt(events, at, current);
   };
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
