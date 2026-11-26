@@ -2778,3 +2778,19 @@
   100% { transform: translateY(var(--wake-travel)); opacity: .12; }
 }
 @media (prefers-reduced-motion: reduce) { .field-local-wake .field-local-echo { animation: none !important; } }
+
+.effort-multiplier {
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-end: 0;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--lime);
+  color: var(--app-text-on-action);
+  font: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.effort-rail:not(.effort-rail-compact) .effort-multiplier { inset-inline-end: 12px; }
+.effort-rail:has(.effort-multiplier) .effort-rail-top { padding-inline-end: 48px; }

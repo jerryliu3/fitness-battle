@@ -14,6 +14,7 @@ export const webEnv = {
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54621",
   supabaseAnonKey:
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "public-anon-key",
+  previewEffortBoost: process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_PREVIEW_EFFORT_BOOST === "true",
   useDemoData:
     (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "false").toLowerCase() === "true",
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",

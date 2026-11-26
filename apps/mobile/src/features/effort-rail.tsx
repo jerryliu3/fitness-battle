@@ -1,5 +1,5 @@
 import { MedalGoldFill } from "../ui/medal-gold-fill";
-import { endOfZonedDay } from "@fitness-battle/shared";
+import { activeMultiplier, endOfZonedDay } from "@fitness-battle/shared";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +19,7 @@ import {
   sportById,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
+import { mobileEnv } from "../lib/env";
 import { useCompeteStore } from "../lib/compete-store";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
@@ -52,12 +53,19 @@ const model=state?effortPointProgress(state,state.primary,competitionTrack(state
   },[scope,model?.score,model?.fraction,canWrite,saveError,reduced,fill,burst]);
   if (!state) return null;
   if (!model) return null;
+  const now = new Date();
+  const boost = activeMultiplier(state.effortAccounts?.[state.primary]?.starter ??
+    (mobileEnv.previewEffortBoost ? {
+      multiplier: 3,
+      startsAt: new Date(now.getTime() - 5 * 86400000).toISOString(),
+      boostEndsAt: new Date(now.getTime() + 25 * 86400000).toISOString(),
+    } : undefined), now);
   const remaining=model.live ? `${model.remaining} points` : formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  return <Pressable style={[s.rail, compact && s.railCompact]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
-    <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {model.officialRank ?? rankForElo(model.score).name}</Text>}{compact ? <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, flexShrink: 1 }}><Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text><Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text></View> : <Text style={s.score} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{formatEffortScore(model.score)} <Text style={s.caption}>Effort Score</Text></Text>}</View>
+  return <Pressable style={[s.rail, compact && s.railCompact]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress${boost ? `. ${boost.label} Effort Boost active` : ""}`} onPress={()=>router.navigate("/you?view=effort")}>
+    <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {model.officialRank ?? rankForElo(model.score).name}</Text>}{compact ? <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, flexShrink: 1 }}><Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text><Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text>{boost && <Text style={s.multiplier}>✦ {boost.label}</Text>}</View> : <Text style={s.score} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{formatEffortScore(model.score)} <Text style={s.caption}>Effort Score</Text></Text>}</View>
     <View accessible accessibilityRole="progressbar" accessibilityLabel="Progress to next rank" accessibilityValue={{min:0,max:100,now:Math.round(model.fraction*100)}} style={compact ? s.trackCompact : s.track}><Animated.View style={[s.fill,{width:fill.interpolate({inputRange:[0,1],outputRange:["0%","100%"]})}]}><MedalGoldFill radius={8} /></Animated.View></View>
     {!compact && <View style={s.row}><Text style={s.caption}>{model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:model.live ? "Live · Finalized weekly" : competitionTrackLabel(model.sport)}</Text><Text style={s.caption}>{model.capped?"Maximum score":`${remaining} left`}</Text></View>}
     {gain>0?<Animated.View accessibilityLiveRegion="polite" style={[s.gain,{opacity:reduced?1:burst.interpolate({inputRange:[0,.2,.8,1],outputRange:[0,1,1,0]}),transform:[{translateY:reduced?0:burst.interpolate({inputRange:[0,1],outputRange:[4,-18]})}]}]}><MedalGoldFill radius={8} /><Text style={s.gainText}>+{gain}{reduced?"":"  ✦ ✧ ✦"}</Text></Animated.View>:null}
   </Pressable>;
 }
-const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},railCompact:{borderWidth:0,backgroundColor:"transparent",padding:0,gap:4,minHeight:0,justifyContent:"center",flex:1,width:"100%"},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},trackCompact:{height:20,borderRadius:8,backgroundColor:c.soft,overflow:"hidden",width:"100%",alignSelf:"stretch"},fill:{height:"100%",borderRadius:8,minHeight:20},gain:{position:"absolute",right:8,top:0,borderRadius:8,paddingHorizontal:8,paddingVertical:4},gainText:{...textStyle("label"),color:c.textOnAction}};});
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},railCompact:{borderWidth:0,backgroundColor:"transparent",padding:0,gap:4,minHeight:0,justifyContent:"center",flex:1,width:"100%"},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},trackCompact:{height:20,borderRadius:8,backgroundColor:c.soft,overflow:"hidden",width:"100%",alignSelf:"stretch"},fill:{height:"100%",borderRadius:8,minHeight:20},gain:{position:"absolute",right:8,top:0,borderRadius:8,paddingHorizontal:8,paddingVertical:4},multiplier:{...textStyle("label"),backgroundColor:c.lime,color:c.textOnAction,borderRadius:6,overflow:"hidden",paddingHorizontal:6,paddingVertical:2},gainText:{...textStyle("label"),color:c.textOnAction}};});

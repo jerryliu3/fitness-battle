@@ -1,5 +1,5 @@
 "use client";
-import { endOfZonedDay } from "@fitness-battle/shared";
+import { activeMultiplier, endOfZonedDay } from "@fitness-battle/shared";
 import { AppText, AppParagraph } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { competitionTrack, competitionTrackLabel, effortPointProgress, formatEffortScore, formatVolume, rankForElo, sportById, type CompeteState } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
+import { webEnv } from "@/lib/env";
 import { useAuth } from "@/components/auth-context";
 
 export function EffortRail({ compact = false }: { compact?: boolean }) {
@@ -33,9 +34,17 @@ export function EffortRail({ compact = false }: { compact?: boolean }) {
     return()=>window.clearTimeout(timer);
   },[scope,model?.score,ready,saveError]);
   if(!state||!model||!ready)return null;
+  const now = new Date();
+  const boost = activeMultiplier(state.effortAccounts?.[state.primary]?.starter ??
+    (webEnv.previewEffortBoost ? {
+      multiplier: 3,
+      startsAt: new Date(now.getTime() - 5 * 86400000).toISOString(),
+      boostEndsAt: new Date(now.getTime() + 25 * 86400000).toISOString(),
+    } : undefined), now);
   const remaining=model.live ? `${model.remaining} points` : formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  return <Link className={`effort-rail${compact ? " effort-rail-compact" : ""}`} href="/you?view=effort#effort-score" aria-label={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${model.capped?"Maximum score":`${remaining} to the next rank`}`}>
+  return <Link className={`effort-rail${compact ? " effort-rail-compact" : ""}`} href="/you?view=effort#effort-score" aria-label={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${model.capped?"Maximum score":`${remaining} to the next rank`}${boost ? `. ${boost.label} Effort Boost active` : ""}`}>
     <span className="effort-rail-top"><span>{sportById(model.sport).name} · {model.officialRank ?? rankForElo(model.score).name}</span><AppText role="value">{formatEffortScore(model.score)} <AppText as="small" role="caption" secondary>Effort Score</AppText></AppText></span>
+    {boost && <span className="effort-multiplier" title={`Effort Boost ends ${boost.endsAt.toLocaleDateString()}`}><span aria-hidden="true">✦</span> {boost.label}</span>}
     <span className="effort-rail-track" role="progressbar" aria-label="Progress to next rank" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(model.fraction*100)}><motion.span initial={false} animate={{scaleX:model.fraction,scaleY:gain&&!reduced?[1,1.6,1]:1}} transition={{duration:reduced?0:.65}} />{!compact && <AppText as="small" role="caption" secondary className="effort-rail-remaining">{model.capped?"Maximum score":`${remaining} left`}</AppText>}</span>
     <span className="effort-rail-caption"><span>{`${model.live ? "Live · " : ""}${model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}`}</span></span>
     {gain>0&&<span className="effort-rail-gain" role="status" key={`${model.score}:${gain}`}>+{gain}{!reduced&&<span className="effort-stars" aria-hidden="true">✦ ✧ ✦</span>}</span>}

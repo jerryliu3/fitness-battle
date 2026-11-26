@@ -42,6 +42,7 @@ export const mobileEnv = {
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
     extra.supabaseAnonKey ??
     "public-anon-key",
+  previewEffortBoost: process.env.NODE_ENV === "development" && process.env.EXPO_PUBLIC_PREVIEW_EFFORT_BOOST === "true",
   useDemoData:
     (
       process.env.EXPO_PUBLIC_USE_DEMO_DATA ??

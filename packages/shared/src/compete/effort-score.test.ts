@@ -1,10 +1,45 @@
 import { describe, expect, it } from 'vitest';
+import { createStarterEffortState, effortBoostMultiplier } from './effort-score';
 import { trainingXpForVolume, calculateLiveEffortScore, createDeclaredEffortState, createEmptyEffortState, getScoreBreakdown, historicalBonusPoints, placementRewardPoints, settleEffortWeek, SPORT_CONFIG, trainingPosition, updateEffortBaseline, type EffortState } from './effort-score';
 const mile = 1609.344;
 const established = (miles = 35): EffortState => ({ ...createEmptyEffortState(), baselineWeeklyVolume: miles*mile, peakObservedBaselineWeeklyVolume: miles*mile, calibrationSamples: 7, cumulativeNormalizedVolume: 26, officialRankIndex: 5 });
 const live = (s: EffortState, day: string, a=0, d=0) => calculateLiveEffortScore('running', s, {now:new Date(day),trainingXpBeforeToday:trainingXpForVolume('running',a*mile),trainingXpToday:trainingXpForVolume('running',d*mile)});
 
 describe('canonical effort score',()=>{
+ it('scales the boost by covered history days',()=>{
+  expect(effortBoostMultiplier(0)).toBe(1);
+  expect(effortBoostMultiplier(45)).toBe(2);
+  expect(effortBoostMultiplier(90)).toBe(3);
+ });
+ it('reaches the same steady training anchor with or without a boost',()=>{
+  const eligibleTrainingXp = trainingXpForVolume('running', 7 * mile);
+  function train(weeks: number, boostedWeeks: number) {
+   let state = createStarterEffortState();
+   for (let index = 0; index < weeks; index++) {
+    const date = new Date(Date.UTC(2026, 0, 5 + 7 * index));
+    state = settleEffortWeek('running', state, {
+     weekId: date.toISOString().slice(0, 10), eligibleTrainingXp,
+     starterCredit: { ordinaryWeeks: 1, boostedWeeks: index < boostedWeeks ? 2 : 0 },
+    }).state;
+   }
+   return getScoreBreakdown('running', state).trainingPoints;
+  }
+  expect(train(4, 0)).toBeCloseTo(625);
+  expect(train(4, 4)).toBeCloseTo(1875);
+  expect(train(16, 0)).toBeCloseTo(2500);
+  expect(train(8, 4)).toBeCloseTo(2500);
+ });
+ it('keeps the ordinary loss when a boosted week lowers the training score',()=>{
+  const state = { ...established(), calibrationSamples: 1, starterProgress: 10 };
+  const week = { weekId: '2026-01-05', eligibleTrainingXp: trainingXpForVolume('running', mile) };
+  const ordinary = settleEffortWeek('running', state, {
+   ...week, starterCredit: { ordinaryWeeks: 1, boostedWeeks: 0 },
+  });
+  const boosted = settleEffortWeek('running', state, {
+   ...week, starterCredit: { ordinaryWeeks: 1, boostedWeeks: 2 },
+  });
+  expect(boosted.state).toEqual(ordinary.state);
+ });
  it('maps every native-unit anchor and extrapolates without a cap',()=>{
   for(const sport of ['running','cycling','walking','strength'] as const){
    SPORT_CONFIG[sport].anchors.forEach((volume,index)=>expect(trainingPosition(sport,volume)).toBe(index));
