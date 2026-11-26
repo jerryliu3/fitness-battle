@@ -6,6 +6,7 @@ import { dailyPeriodBounds, shiftAppDay } from "./period";
 export interface CrewActivity {
   id: string; userId: string; name: string; avatarUrl: string | null; sport: SportId;
   startedAt: string; distanceM: number; movingSec: number; verified: boolean; source: string;
+  summaryPolyline?: string | null;
 }
 export interface CrewActivityPage {
   activities: CrewActivity[]; next: { before: string; beforeId: string } | null;

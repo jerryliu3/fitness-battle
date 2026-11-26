@@ -20,16 +20,24 @@ export function courseInitialZoom(latitude: number, height: number, pitch: numbe
   return Math.max(0, Math.min(20, Math.log2(78271.516964 * Math.cos(latitude * Math.PI / 180) * (height > 0 ? height : 600) * perspective / (2 * RACE_LOCAL_RADIUS_METRES))));
 }
 
-/** Previews contain you and reachable rivals, never an entire distant field. */
+/** Previews contain you and reachable rivals while preserving full-field rank and leader state. */
 export function coursePreviewLanes(lanes: readonly ArenaSceneLane[], unit: string) {
   const you = lanes.find(lane => lane.you && !lane.ghost);
   if (!you) return [];
   const metres = raceEffortMetres(you.value, unit);
   if (metres === null) return [];
-  return lanes.filter(lane => {
-    const at = raceEffortMetres(lane.value, unit);
-    return !lane.ghost && at !== null && Math.abs(at - metres) <= RACE_LOCAL_RADIUS_METRES;
-  });
+  const roster = lanes.filter(lane => !lane.ghost);
+  const leaderValue = roster.length ? Math.max(...roster.map(lane => lane.value)) : 0;
+  return roster
+    .filter(lane => {
+      const at = raceEffortMetres(lane.value, unit);
+      return at !== null && Math.abs(at - metres) <= RACE_LOCAL_RADIUS_METRES;
+    })
+    .map(lane => ({
+      ...lane,
+      rank: lane.rank ?? (1 + roster.filter(peer => peer.value > lane.value).length),
+      leader: lane.leader ?? (lane.value >= leaderValue),
+    }));
 }
 
 /** First place is brand gold in every appearance mode; peers use the comparison color. */
@@ -81,7 +89,7 @@ function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[
   const leaderValue = Math.max(...roster.map(lane => lane.value));
   const athletes = roster.map(lane => {
     const metres = raceEffortMetres(lane.value, unit);
-    return metres === null ? null : { ...lane, ...raceCourseRacerPosition(course, metres, offsets.get(lane.id)), leader: lane.value >= leaderValue };
+    return metres === null ? null : { ...lane, ...raceCourseRacerPosition(course, metres, offsets.get(lane.id)), leader: lane.leader ?? (lane.value >= leaderValue) };
   }).filter(athlete => athlete !== null);
   const trails = { type: "FeatureCollection" as const, features: athletes.filter(athlete => athlete.metres > 0).map(athlete => ({
     type: "Feature" as const, id: athlete.id,
@@ -117,7 +125,7 @@ function buildSharedProfileLaneGeometry(
   const athletes = prepared.map(({ lane, metres }) => ({
     ...lane,
     ...raceCourseRacerPosition(course, metres, offsets.get(lane.id) ?? 0),
-    leader: lane.value >= leaderValue,
+    leader: lane.leader ?? (lane.value >= leaderValue),
   }));
   const explicitSelected = selectedId
     ? athletes.find((lane) => lane.id === selectedId)
@@ -220,7 +228,7 @@ export function raceCourseScene(
 /** Geographic cards show each athlete’s full earned distance. */
 export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: ArenaSceneLane, unit: string) {
   if (lanes.some(peer => peer.mystery)) return "";
-  const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+  const rank = lane.rank ?? (1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length);
   return `${ordinalPlace(rank)} · ${lane.value.toFixed(1)} ${unit}`;
 }
 

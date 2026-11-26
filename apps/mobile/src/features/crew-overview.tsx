@@ -2,7 +2,7 @@ import { pageCarouselStyles } from "../ui/carousel-styles";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, resolveCrewWeekMetric, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useThemeColors } from "../theme";
 import { FocusButton, useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
@@ -32,22 +32,28 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
   const { accessToken, offlineMode } = useAuth();
   const [replayEntries, setReplayEntries] = useState<CrewOverviewInput["entries"]>();
   const [replayError, setReplayError] = useState("");
+  const contractUi = useCrewContractModal(crewId, input);
+  const { passport, contract } = contractUi;
+  const activeMetric = resolveCrewWeekMetric({
+    format: input.format,
+    sport: input.sport,
+    contract: contract ? { metric: contract.metric, target: contract.target } : null,
+  });
+  const replaySport = activeMetric === "distance_m" ? input.sport : null;
+  const weekStart = weeklyPeriodBounds(new Date(input.now)).startsAt.toISOString();
   useEffect(() => {
     setReplayEntries(undefined);
     setReplayError("");
     if (offlineMode) { setReplayEntries(input.entries); return; }
     if (!accessToken) return;
     let active = true;
-    const since = weeklyPeriodBounds(new Date(input.now)).startsAt.toISOString();
     void readCrewReplay(cursor => {
-      const params = new URLSearchParams({ crewId, since, limit: "100" });
+      const params = new URLSearchParams({ crewId, since: weekStart, limit: "100" });
       if (cursor) { params.set("before", cursor.before); params.set("beforeId", cursor.beforeId); }
       return requestApi<CrewActivityPage>(mobileEnv.apiUrl, accessToken, `/api/crews/activities?${params}`);
-    }, input.sport).then(rows => { if (active) setReplayEntries(rows); }).catch(() => { if (active) setReplayError("Replay unavailable"); });
+    }, replaySport).then(rows => { if (active) setReplayEntries(rows); }).catch(() => { if (active) setReplayError("Replay unavailable"); });
     return () => { active = false; };
-  }, [crewId, accessToken, offlineMode, input.sport, input.now]);
-  const contractUi = useCrewContractModal(crewId, input);
-  const { passport, contract } = contractUi;
+  }, [crewId, accessToken, offlineMode, replaySport, weekStart]);
   const overviewInput = useMemo<CrewOverviewInput>(
     () => ({ ...input, contract: contract ? { metric: contract.metric, target: contract.target } : null }),
     [input, contract?.metric, contract?.target],
@@ -119,7 +125,7 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
           <CrewRelay {...overviewInput} entries={view.entries} model={view.relay.model} compact hiddenIds={hiddenIds} onSelectMember={onSelectMember} />
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: c.line, paddingTop: 10 }}>
-          <Pressable accessibilityRole="button" disabled={!events.length} accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, opacity: events.length ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={playing ? "Pause replay" : "Replay this week"} accessibilityState={{ selected: playing }} onPress={() => { if (!events.length) return; if (!playing && frame === 1) setFrame(0); setPlaying(!playing); }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceInverse, alignItems: "center", justifyContent: "center" }}>
             <AppIcon name={playing ? "pause" : "play"} size={20} color={c.textOnInverse} />
           </Pressable>
           <View accessible accessibilityRole="adjustable" accessibilityLabel="Weekly replay timeline" accessibilityValue={{ min: 0, max: 100, now: Math.round(frame * 100), text: view.replayLabel }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => selectFrame(frame + (e.nativeEvent.actionName === "increment" ? 0.05 : -0.05))} onLayout={e => setTrackWidth(e.nativeEvent.layout.width)} onStartShouldSetResponder={() => true} onResponderGrant={e => scrubTrack(e.nativeEvent.locationX)} onResponderMove={e => scrubTrack(e.nativeEvent.locationX)} style={{ flex: 1, height: 44, justifyContent: "center" }}>

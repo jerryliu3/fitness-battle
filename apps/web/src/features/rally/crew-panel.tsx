@@ -12,6 +12,7 @@ import { useCompete } from "@/components/compete-context";
 import { CrewOverview } from "./crew-overview";
 import { Sheet } from "@/ui/sheet";
 import {
+  CREW_SPORT_OPTIONS,
   SPORTS,
   rankSymbolForScore,
   APP_ICON_PATHS,
@@ -24,14 +25,19 @@ import {
   crewInviteHttpsUrl,
   crewInviteNativePath,
   crewInviteWebDestination,
+  type CrewFormatOption,
+  type CrewSportOption,
   type SportId,
+  countsForTraining,
   countsOnTrack,
   crewMemberWeekValue,
   crewLineup,
-  crewTargetSpec,
+  crewSettingsTargetConfig,
+  crewWeeklyMeasureOptions,
   formatCrewRelayVolume,
   humanizeCrewApiError,
   resolveCrewWeekMetric,
+  resolveEditableCrewSettings,
 } from "@fitness-battle/shared";
 import { useCrewPassport } from "./use-crew-passport";
 import { CrewInviteLanding } from "./crew-invite-landing";
@@ -50,6 +56,7 @@ interface Crew {
   format: string;
   target_sessions: number;
   journey_km: number;
+  target_hours?: number;
 }
 interface Member {
   effort_score?: number | null;
@@ -127,9 +134,9 @@ export function CrewPanel() {
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [editSport, setEditSport] = useState<SportId>("running");
-  const [editFormat, setEditFormat] = useState<"cooperative" | "personal_target">("cooperative");
-  const [editTarget, setEditTarget] = useState<number>(40);
+  const [editSport, setEditSport] = useState<CrewSportOption>("all");
+  const [editFormat, setEditFormat] = useState<CrewFormatOption>("duration");
+  const [editTarget, setEditTarget] = useState<number>(10);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
@@ -274,10 +281,11 @@ export function CrewPanel() {
     id: "solo-preview",
     name: state?.name ? `${state.name}’s Circle` : "Your Circle",
     invite_code: "SOLO",
-    sport: athleteSport,
-    format: "cooperative",
+    sport: "all",
+    format: "duration",
     target_sessions: 4,
     journey_km: 40,
+    target_hours: 10,
   };
 
   const soloMember: Member = {
@@ -288,7 +296,7 @@ export function CrewPanel() {
   };
 
   const soloEntries: Entry[] = (state?.activities ?? [])
-    .filter((a) => { const now = state ? competeNow(state) : new Date(); const week = weeklyPeriodBounds(now); return countsOnTrack(a, "open") && a.sport === state?.primary && new Date(a.startedAt) >= week.startsAt && new Date(a.startedAt) < week.endsAt && new Date(a.startedAt) <= now; })
+    .filter((a) => { const now = state ? competeNow(state) : new Date(); const week = weeklyPeriodBounds(now); return countsForTraining(a) && new Date(a.startedAt) >= week.startsAt && new Date(a.startedAt) < week.endsAt && new Date(a.startedAt) <= now; })
     .map((a) => ({
       crew_id: "solo-preview",
       user_id: user?.id ?? "solo-guest",
@@ -339,6 +347,7 @@ export function CrewPanel() {
       sport: crew.sport,
       format: crew.format,
       targetSessions: crew.target_sessions,
+      targetHours: crew.target_hours ?? 10,
       targetDistanceM: crew.journey_km * 1000,
       previousDistanceM,
       now: (state ? competeNow(state) : new Date()).toISOString(),
@@ -350,6 +359,7 @@ export function CrewPanel() {
       crew.sport,
       crew.format,
       crew.target_sessions,
+      crew.target_hours,
       crew.journey_km,
       previousDistanceM,
       state,
@@ -422,14 +432,14 @@ export function CrewPanel() {
               }}>{crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="new">New crew +</option></select><svg aria-hidden="true" className="crew-header-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.chevron} /></svg></AppHeading>
             </div>
             <div className="crew-header-actions"><button type="button" className="crew-invite" onClick={() => requireCrewAccount(() => setPanel(isSolo ? "add" : "invite"))}>Invite</button><button type="button" aria-label="Crew settings" onClick={() => requireCrewAccount(() => {
-              const isSessions = crew.format === "personal_target" || crew.sport === "strength";
-              setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
-              setEditFormat(isSessions ? "personal_target" : "cooperative");
-              setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+              const resolved = resolveEditableCrewSettings(crew);
+              setEditSport(resolved.sport);
+              setEditFormat(resolved.format);
+              setEditTarget(resolved.target);
               setPanel("manage");
             })}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={APP_ICON_PATHS.settings} /></svg></button></div>
           </header>
-          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => requireCrewAccount(() => setPanel("members"))} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => requireCrewAccount(() => setPanel("add"))}>Create or join a crew</button></section> : null}
+          {!isSolo ? <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetHours={crew.target_hours ?? 10} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => requireCrewAccount(() => setPanel("members"))} /> : user ? <section className="focus-card"><AppHeading level={2} role="display">Make room for your people.</AppHeading><button type="button" className="fb-btn" onClick={() => requireCrewAccount(() => setPanel("add"))}>Create or join a crew</button></section> : null}
         </>
       )}
       {!panel && note && (
@@ -567,7 +577,7 @@ export function CrewPanel() {
               />
             </label>
             <AppParagraph typographyRole="caption" className="fb-note">
-              Defaults to your primary sport and weekly contract goals; adjust anytime in crew settings.
+              Tracks all counted sports by weekly hours by default; adjust anytime in crew settings.
             </AppParagraph>
             <button
               className="fb-btn"
@@ -578,8 +588,9 @@ export function CrewPanel() {
                 } else if (name.trim()) {
                   void write("", {
                     name: name.trim(),
-                    sport: state?.primary ?? "running",
-                    format: "cooperative",
+                    sport: "all",
+                    format: "duration",
+                    targetHours: 10,
                   });
                 } else {
                   setNote("Enter an invite code to join or a crew name to create.");
@@ -668,39 +679,42 @@ export function CrewPanel() {
               <select
                 value={editSport}
                 onChange={(e) => {
-                  const next = e.target.value as SportId;
+                  const next = e.target.value as CrewSportOption;
                   setEditSport(next);
-                  if (next === "strength") {
-                    setEditFormat("personal_target");
-                    setEditTarget(crew.target_sessions || 3);
+                  if ((next === "all" || next === "strength") && editFormat === "cooperative") {
+                    setEditFormat("duration");
+                    setEditTarget(crew.target_hours ?? 10);
                   }
                 }}
               >
-                {SPORTS.map((sp) => (
+                {CREW_SPORT_OPTIONS.map((sp) => (
                   <option key={sp.id} value={sp.id}>{sp.name}</option>
                 ))}
               </select>
             </label>
-            {editSport !== "strength" && (
-              <label className="fb-field">
-                Default weekly measure
-                <select
-                  value={editFormat}
-                  onChange={(e) => {
-                    const next = e.target.value as "cooperative" | "personal_target";
-                    setEditFormat(next);
-                    setEditTarget(next === "personal_target" ? crew.target_sessions : crew.journey_km);
-                  }}
-                >
-                  <option value="cooperative">Shared distance</option>
-                  <option value="personal_target">Session targets</option>
-                </select>
-              </label>
-            )}
+            <label className="fb-field">
+              Default weekly measure
+              <select
+                value={editFormat}
+                onChange={(e) => {
+                  const next = e.target.value as CrewFormatOption;
+                  setEditFormat(next);
+                  setEditTarget(
+                    next === "duration"
+                      ? (crew.target_hours ?? 10)
+                      : next === "personal_target"
+                        ? crew.target_sessions
+                        : crew.journey_km,
+                  );
+                }}
+              >
+                {crewWeeklyMeasureOptions(editSport).map((opt) => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
+            </label>
             {(() => {
-              const sessions = editFormat === "personal_target" || editSport === "strength";
-              const spec = crewTargetSpec(sessions ? "session_targets" : "shared_distance_km");
-              const label = sessions ? "Default sessions per member" : "Default shared distance (km)";
+              const { spec, label } = crewSettingsTargetConfig(editSport, editFormat);
               return (
                 <div className="fb-field">
                   <span>{label}</span>
@@ -725,16 +739,16 @@ export function CrewPanel() {
               className="fb-btn"
               disabled={busy}
               onClick={() => {
-                const sessions = editFormat === "personal_target" || editSport === "strength";
+                const { effectiveFormat } = crewSettingsTargetConfig(editSport, editFormat);
                 void write(
                   "",
                   {
                     crewId: crew.id,
                     sport: editSport,
-                    format: sessions ? "personal_target" : "cooperative",
-                    ...(sessions
-                      ? { targetSessions: Math.round(editTarget), journeyKm: crew.journey_km }
-                      : { journeyKm: editTarget, targetSessions: crew.target_sessions }),
+                    format: effectiveFormat,
+                    targetHours: effectiveFormat === "duration" ? editTarget : (crew.target_hours ?? 10),
+                    targetSessions: effectiveFormat === "personal_target" ? Math.round(editTarget) : crew.target_sessions,
+                    journeyKm: effectiveFormat === "cooperative" ? editTarget : crew.journey_km,
                   },
                   "PATCH",
                 );

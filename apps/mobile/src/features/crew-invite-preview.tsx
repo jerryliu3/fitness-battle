@@ -62,6 +62,7 @@ export function CrewInvitePreview({
         sport={preview.sport}
         format={preview.format}
         targetSessions={preview.target_sessions}
+        targetHours={preview.target_hours ?? 10}
         targetDistanceM={preview.journey_km * 1000}
         members={crewInviteOverviewMembers(preview)}
         entries={[]}

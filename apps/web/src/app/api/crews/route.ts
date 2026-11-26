@@ -11,6 +11,7 @@ interface CrewEmbed {
   format: string;
   target_sessions: number;
   journey_km: number;
+  target_hours?: number;
 }
 
 interface MembershipRow {
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
   const supabase = await createRequestClient(request);
   const { data: memberships, error } = await supabase
     .from("crew_members")
-    .select("crew_id, display_name, status, rest_week, crews(id, name, invite_code, sport, format, target_sessions, journey_km)")
+    .select("crew_id, display_name, status, rest_week, crews(id, name, invite_code, sport, format, target_sessions, journey_km, target_hours)")
     .eq("user_id", userId)
     .eq("status", "active");
   if (error) {
@@ -143,13 +144,15 @@ export async function POST(request: Request) {
     format?: string;
     targetSessions?: number;
     journeyKm?: number;
+    targetHours?: number;
   };
   const { data, error } = await supabase.rpc("create_crew", {
     p_name: body.name ?? "Crew",
-    p_sport: body.sport ?? "running",
-    p_format: body.format ?? "cooperative",
+    p_sport: body.sport ?? "all",
+    p_format: body.format ?? "duration",
     p_target_sessions: body.targetSessions ?? 3,
     p_journey_km: body.journeyKm ?? 40,
+    p_target_hours: body.targetHours ?? 10,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -169,18 +172,20 @@ export async function PATCH(request: Request) {
     format?: string;
     targetSessions?: number;
     journeyKm?: number;
+    targetHours?: number;
   };
   if (!body.crewId) {
     return NextResponse.json({ error: "crew_id_required" }, { status: 400 });
   }
-  const sport = body.sport ?? "running";
-  const format = body.format ?? "cooperative";
+  const sport = body.sport ?? "all";
+  const format = body.format ?? "duration";
   const targetSessions = body.targetSessions ?? 3;
   const journeyKm = body.journeyKm ?? 40;
-  if (!["running", "cycling", "walking", "strength"].includes(sport)) {
+  const targetHours = body.targetHours ?? 10;
+  if (!["all", "running", "cycling", "walking", "strength"].includes(sport)) {
     return NextResponse.json({ error: "invalid_sport" }, { status: 400 });
   }
-  if (!["volume", "personal_target", "cooperative"].includes(format)) {
+  if (!["volume", "personal_target", "cooperative", "duration"].includes(format)) {
     return NextResponse.json({ error: "invalid_format" }, { status: 400 });
   }
   if (!Number.isFinite(targetSessions) || targetSessions < 1 || targetSessions > 14) {
@@ -189,12 +194,16 @@ export async function PATCH(request: Request) {
   if (!Number.isFinite(journeyKm) || journeyKm < 1) {
     return NextResponse.json({ error: "invalid_journey_km" }, { status: 400 });
   }
+  if (!Number.isFinite(targetHours) || targetHours < 1) {
+    return NextResponse.json({ error: "invalid_target_hours" }, { status: 400 });
+  }
   const { data, error } = await supabase.rpc("update_crew_settings", {
     p_crew_id: body.crewId,
     p_sport: sport,
     p_format: format,
     p_target_sessions: Math.round(targetSessions),
     p_journey_km: journeyKm,
+    p_target_hours: targetHours,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

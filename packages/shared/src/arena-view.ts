@@ -12,6 +12,8 @@ export interface ArenaSceneLane {
   name: string;
   initials: string;
   value: number;
+  rank?: number;
+  leader?: boolean;
   you?: boolean;
   ghost?: boolean;
   lastUpdated?: string;

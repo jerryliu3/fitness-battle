@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     return [{ id: String(row.activity_id), userId: String(row.user_id), name: String(row.display_name || "Athlete"),
       avatarUrl: typeof row.avatar_url === "string" ? row.avatar_url : null, sport: row.sport as SportId,
       startedAt: String(row.started_at), distanceM: Number(row.distance_m), movingSec: Number(row.moving_sec),
-      verified: row.verified === true, source: String(row.source) }];
+      verified: row.verified === true, source: String(row.source),
+      summaryPolyline: typeof row.summary_polyline === "string" ? row.summary_polyline : null }];
   });
   const last = activities.at(-1);
   return NextResponse.json({ activities, next: activities.length === limit && last ? { before: last.startedAt, beforeId: last.id } : null });

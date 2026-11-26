@@ -9,6 +9,7 @@ import { useSpecialEvents } from "../../src/features/use-special-events";
 import { useCompeteExperience } from "../../src/features/compete-experience";
 import { RaceUpdates } from "../../src/features/race-updates";
 import { EventHome } from "../../src/features/event-home";
+import { CoursePreviewReadyProvider } from "../../src/features/course-preview-ready";
 import { CompeteIcon, CrewEvents, ExploreEvents, CompeteResults } from "../../src/features/compete-home-sections";
 import { CompeteSheet } from "../../src/ui/compete-sheet";
 import { SectionStack, AppText } from "../../src/ui/section";
@@ -22,7 +23,7 @@ import {
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { BackHandler, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, BackHandler, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { forgetCourseCameras } from "../../src/features/deferred-course-map";
@@ -71,6 +72,7 @@ const f=useFocusStyles();
   const [courseOptions, setCourseOptions] = useState<React.ReactNode>(null);
   const [expandRequest, setExpandRequest] = useState(0);
   const [pointsFraction, setPointsFraction] = useState<number | null>(null);
+  const [previewsReady, setPreviewsReady] = useState(true);
   useEffect(() => { setPointsFraction(null); setAthleteFocus(null); }, [experience.event?.sport, accountKey]);
   // Leaving an event discards in-event view changes so re-entry matches its preview.
   const [fieldSession, setFieldSession] = useState(0);
@@ -204,6 +206,7 @@ const f=useFocusStyles();
       ) : null}
       {persistent && experience.immersive && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
       {<ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? metricImmersive && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
+<CoursePreviewReadyProvider onReadyChange={setPreviewsReady}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
         {standingsStale ? (
@@ -224,7 +227,18 @@ const f=useFocusStyles();
         }} />}
         {!persistent && <CompeteResults state={state} onHistory={() => router.push("/progress-history")} onRankings={() => router.push("/benchmarks")} />}
       </SectionStack>
+</CoursePreviewReadyProvider>
 </ArenaSheet>}
+      {!persistent && !previewsReady ? (
+        <View
+          accessibilityRole="progressbar"
+          accessibilityLabel="Loading Compete previews"
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.paper, alignItems: "center", justifyContent: "center", gap: 12, zIndex: 10 }]}
+        >
+          <ActivityIndicator size="large" color={c.tennis} />
+          <AppText role="body" secondary>Loading Compete…</AppText>
+        </View>
+      ) : null}
       <FocusSheet open={register} hideTitle={Boolean(sport)} title={registrationCrew ? "Crew Derby" : sport ? `${eventRegistration(state, sport, now).name} Registration` : "Choose an event"} onClose={() => { joinFlight.current = null; setRegister(false); }} onClosed={() => {
         setRegistrationBackground(null);
         const event = pendingEntry.current;

@@ -46,6 +46,7 @@ vi.mock("react-native", async () => {
     Animated: { View: "View", Value: class { constructor(public value: number) {} setValue(value: number) { this.value = value; } interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
     Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
     AppState: { addEventListener: () => ({ remove() {} }) },
+    ActivityIndicator: "ActivityIndicator",
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     Pressable: "Pressable",
     ScrollView: "ScrollView",
@@ -102,7 +103,7 @@ vi.mock("../features/competition-summary", async () => {
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("../features/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
-vi.mock("../features/deferred-course-map", () => ({ forgetCourseCameras() {} }));
+vi.mock("../features/deferred-course-map", () => ({ forgetCourseCameras() {}, nativeCourseMapAvailable: false }));
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "", retry() {} }) }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));

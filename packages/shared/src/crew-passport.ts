@@ -1,6 +1,6 @@
 import { crewSessionInstant } from "./compete/crew-sessions";
 import { formatDistanceM, distanceUnitLabel } from "./compete/engine";
-import type { UnitSystem } from "./compete/sports";
+import { SPORTS, type SportId, type UnitSystem } from "./compete/sports";
 
 export type CrewContractMetric = "distance_m" | "moving_sec" | "sessions" | "contributors";
 export interface CrewContract {
@@ -34,13 +34,14 @@ export interface CrewTargetSelectorSpec {
   unit: string;
 }
 
-export function crewTargetSpec(kind: "shared_distance_km" | "session_targets" | CrewContractMetric): CrewTargetSelectorSpec {
+export function crewTargetSpec(kind: "shared_distance_km" | "session_targets" | "duration_hours" | CrewContractMetric): CrewTargetSelectorSpec {
   switch (kind) {
     case "shared_distance_km":
     case "distance_m":
       return { min: 1, max: 500, step: 5, defaultValue: 40, presets: [20, 40, 60, 100, 150], unit: "km" };
     case "session_targets":
       return { min: 1, max: 14, step: 1, defaultValue: 3, presets: [2, 3, 4, 5, 7], unit: "sessions" };
+    case "duration_hours":
     case "moving_sec":
       return { min: 1, max: 200, step: 1, defaultValue: 10, presets: [5, 10, 20, 40], unit: "h" };
     case "sessions":
@@ -58,7 +59,7 @@ export function formatCrewTargetLabel(value: number, unit?: string): string {
 }
 
 export function crewContractMetrics(sport: string) {
-  return CREW_CONTRACT_METRICS.filter(metric => sport !== "strength" || metric.id !== "distance_m");
+  return CREW_CONTRACT_METRICS.filter(metric => (sport !== "strength" && sport !== "all") || metric.id !== "distance_m");
 }
 export function crewContractTarget(metric: CrewContractMetric, input: string): number {
   const value = Number(input);
@@ -124,4 +125,69 @@ export function crewBadgeCollection(receipts: readonly CrewBadgeReceipt[], units
     }
     return { ...badge, receipt, result };
   });
+}
+
+export type CrewSportOption = "all" | SportId;
+export type CrewFormatOption = "duration" | "cooperative" | "personal_target";
+
+export const CREW_SPORT_OPTIONS: readonly { id: CrewSportOption; name: string }[] = [
+  { id: "all", name: "All" },
+  ...SPORTS,
+];
+
+export function crewWeeklyMeasureOptions(sport: CrewSportOption): readonly { id: CrewFormatOption; label: string }[] {
+  return [
+    { id: "duration", label: "Duration (hours)" },
+    ...(sport !== "all" && sport !== "strength"
+      ? [{ id: "cooperative" as const, label: "Shared distance" }]
+      : []),
+    { id: "personal_target", label: "Session targets" },
+  ];
+}
+
+export function resolveEditableCrewSettings(crew: {
+  sport: string;
+  format: string;
+  target_sessions: number;
+  journey_km: number;
+  target_hours?: number;
+}) {
+  const sport: CrewSportOption =
+    crew.sport === "all" || SPORTS.some((s) => s.id === crew.sport)
+      ? (crew.sport as CrewSportOption)
+      : "all";
+  const format: CrewFormatOption =
+    crew.format === "duration"
+      ? "duration"
+      : crew.format === "personal_target" || sport === "strength" || sport === "all"
+        ? "personal_target"
+        : "cooperative";
+  const target =
+    format === "duration"
+      ? (crew.target_hours ?? 10)
+      : format === "personal_target"
+        ? crew.target_sessions
+        : crew.journey_km;
+  return { sport, format, target };
+}
+
+export function crewSettingsTargetConfig(sport: CrewSportOption, format: CrewFormatOption) {
+  const effectiveFormat: CrewFormatOption =
+    format === "cooperative" && (sport === "all" || sport === "strength")
+      ? "personal_target"
+      : format;
+  const spec = crewTargetSpec(
+    effectiveFormat === "duration"
+      ? "duration_hours"
+      : effectiveFormat === "personal_target"
+        ? "session_targets"
+        : "shared_distance_km",
+  );
+  const label =
+    effectiveFormat === "duration"
+      ? "Default shared hours"
+      : effectiveFormat === "personal_target"
+        ? "Default sessions per member"
+        : "Default shared distance (km)";
+  return { effectiveFormat, spec, label };
 }

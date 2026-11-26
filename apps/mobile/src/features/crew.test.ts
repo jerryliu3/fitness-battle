@@ -18,7 +18,9 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   state: null as unknown,
   data: null as unknown,
+  passport: null as unknown,
   user: null as unknown,
+  lastWrite: null as { url: string; method?: string; body?: string } | null,
 }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
@@ -73,9 +75,14 @@ vi.mock("../lib/compete-store", () => ({
 }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("../lib/fetch-with-timeout", () => ({
-  fetchWithTimeout: async (url: string, options: { body?: string }) => {
+  fetchWithTimeout: async (url: string, options: { method?: string; body?: string }) => {
+    if (options?.body) mock.lastWrite = { url, method: options.method, body: options.body };
     if (url.includes("/crews/sessions"))
       return { ok: true, json: async () => ({ sessions: [] }) };
+    if (url.includes("/crews/passport"))
+      return { ok: true, json: async () => mock.passport ?? { contract: null, seasons: [], stamps: [], badges: [] } };
+    if (url.includes("/crews/activities"))
+      return { ok: true, json: async () => ({ activities: [], next: null }) };
     if (url.endsWith("/rest") && mock.data && options.body) {
       const body = JSON.parse(options.body);
       (
@@ -104,7 +111,9 @@ let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   mock.data = null;
+  mock.passport = null;
   mock.user = null;
+  mock.lastWrite = null;
   clearApiReads();
   vi.unstubAllGlobals();
 });
@@ -191,6 +200,28 @@ it("opens crew settings with leave crew button and minimal sheet", async () => {
   ).toBe(true);
 });
 
+it("keeps the weekly contract replay button constantly enabled when crew activities are empty", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = true;
+  mock.state = freshState();
+  mock.passport = {
+    contract: { id: "c1", crew_id: "crew", season_id: null, title: "Weekly hours", sport: "running", metric: "moving_sec", target: 36000, value: 0, contributors: 0, roster_size: 1, period_kind: "weekly", time_zone: APP_TIMEZONE, starts_at: "2026-11-09T05:00:00Z", ends_at: "2026-11-16T05:00:00Z", rule_version: 1 },
+    seasons: [], stamps: [], badges: [],
+  };
+  mock.data = {
+    crews: [{ crews: { id: "crew", name: "Runners", sport: "running", format: "volume", journey_km: 40, target_sessions: 4, invite_code: "ABC" } }],
+    members: [{ crew_id: "crew", user_id: "audit", display_name: "You", status: "active", rest_week: null }],
+    entries: [],
+    notices: [],
+  };
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  const playBtn = renderer.root.findByProps({ accessibilityLabel: "Replay this week" });
+  expect(playBtn.props.disabled).toBeFalsy();
+  expect(playBtn.props.style?.opacity).toBeUndefined();
+});
+
 it("does not inject a fake demo crew when running offline", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.live = false;
@@ -202,4 +233,50 @@ it("does not inject a fake demo crew when running offline", async () => {
   const content = JSON.stringify(renderer.toJSON());
   expect(content).not.toContain("Weekday miles");
   expect(content).toContain("Make room for your people");
+});
+
+it("exposes all sports and duration hours in crew settings", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = true;
+  mock.state = freshState();
+  mock.data = {
+    crews: [{ crews: { id: "crew", name: "All Stars", sport: "all", format: "duration", journey_km: 40, target_sessions: 3, target_hours: 10, invite_code: "ABC" } }],
+    members: [{ crew_id: "crew", user_id: "audit", display_name: "You", status: "active", rest_week: null }],
+    entries: [],
+    notices: [],
+  };
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  await act(async () => renderer.root.findByProps({ accessibilityLabel: "Crew settings" }).props.onPress());
+  const text = JSON.stringify(renderer.toJSON());
+  expect(text).toContain('"All"');
+  expect(text).toContain("Duration (hours)");
+  expect(text).toContain("Default shared hours");
+  expect(text).not.toContain("Shared distance");
+});
+
+it("defaults newly created crews to all sports and duration hours", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = true;
+  mock.state = freshState();
+  mock.data = { crews: [], members: [], entries: [], notices: [] };
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  await act(async () =>
+    renderer.root.findAllByType("FocusButton" as never).find((b) => b.props.label === "Create or join a crew")!.props.onPress(),
+  );
+  await act(async () => {
+    renderer.root.findByProps({ label: "Crew name" }).props.onChangeText("Weekend Crew");
+  });
+  await act(async () => {
+    await renderer.root.findAllByType("FocusButton" as never).find((b) => b.props.label === "Create crew")!.props.onPress();
+  });
+  expect(JSON.parse(mock.lastWrite?.body ?? "{}")).toMatchObject({
+    name: "Weekend Crew",
+    sport: "all",
+    format: "duration",
+    targetHours: 10,
+  });
 });

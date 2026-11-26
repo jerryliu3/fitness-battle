@@ -149,7 +149,7 @@ export default function CourseMap({ cardSessionKey, initialFlat = false, onFlatC
   return <div className="geographic-map" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }} />
     {ready && map.current ? scene.callouts.map(lane => {
-      const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+      const rank = lane.rank ?? (1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length);
       const subdetail = courseAthleteSubdetail(lanes, lane, unit);
       const selected = lane.id === selectedId && !dismissed.includes(lane.id);
       return <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} passStrength={reduced.current ? 0 : replay?.passEffects.find(pass => pass.id === lane.id)?.strength ?? 0} detail={courseAthleteDetail(lanes, lane, unit)} subdetail={subdetail} selected={sharedLane || lane.mystery ? selected || Boolean(onSnapshot && lane.you) : selected} gold={rank === 1} profileNodes={sharedLane || Boolean(lane.mystery)} onDismiss={!onSnapshot && selected ? () => setDismissed(ids => [...ids, lane.id]) : undefined} onSelect={onSelect} />;

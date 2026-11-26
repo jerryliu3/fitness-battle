@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { crewLineup, crewOverview, crewReplayEvents, type CrewOverviewInput } from "./crew-overview";
+import { crewLineup, crewOverview, crewReplayEvents, readCrewReplay, type CrewOverviewInput } from "./crew-overview";
 const input: CrewOverviewInput = {
   now: "2026-11-11T18:00:00Z", sport: "running", format: "volume", targetSessions: 4, targetDistanceM: 1000, units: "metric",
   members: [{ user_id: "a", display_name: "Alice" }, { user_id: "b", display_name: "Bob" }],
@@ -40,4 +40,16 @@ it("drives the 3D relay reading, unit, and finish position from the active contr
   expect(sessionsView.targetReading).toBe("2");
   expect(sessionsView.unit).toBe("sessions");
   expect(sessionsView.complete).toBe(true);
+});
+
+it("includes all sports in readCrewReplay when sport is null and filters when specified", async () => {
+  const page = async () => ({
+    activities: [
+      { id: "1", userId: "a", name: "Alice", avatarUrl: null, sport: "running" as const, startedAt: "2026-11-10T12:00:00Z", distanceM: 5000, movingSec: 1800, verified: true, source: "strava" },
+      { id: "2", userId: "a", name: "Alice", avatarUrl: null, sport: "strength" as const, startedAt: "2026-11-11T12:00:00Z", distanceM: 0, movingSec: 3600, verified: false, source: "apple_health" },
+    ],
+    next: null,
+  });
+  expect(await readCrewReplay(page, null)).toHaveLength(2);
+  expect(await readCrewReplay(page, "running")).toHaveLength(1);
 });

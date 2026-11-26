@@ -21,7 +21,7 @@ export function crewLineup<T extends { user_id: string; display_name: string }>(
   sport: string,
   metric?: CrewContractMetric,
 ) {
-  const activeMetric = metric ?? (sport === "strength" ? "sessions" : "distance_m");
+  const activeMetric = metric ?? (sport === "strength" || sport === "all" ? "sessions" : "distance_m");
   const totals = new Map<string, number>();
   for (const e of entries) {
     const add = activeMetric === "sessions"
@@ -104,12 +104,12 @@ export function crewOverview(input: CrewOverviewInput, progress = 1, events: Cre
 }
 
 /** Exhaust the existing scoped activity reader so replay is never a partial week. */
-export async function readCrewReplay(read: (cursor: CrewActivityPage["next"]) => Promise<CrewActivityPage>, sport: string) {
+export async function readCrewReplay(read: (cursor: CrewActivityPage["next"]) => Promise<CrewActivityPage>, sport?: string | null) {
   const entries: CrewOverviewInput["entries"] = [];
   let cursor: CrewActivityPage["next"] = null;
   do {
     const page = await read(cursor);
-    entries.push(...page.activities.filter(a => a.sport === sport).map(a => ({ user_id: a.userId, distance_m: a.distanceM, moving_sec: a.movingSec, started_at: a.startedAt })));
+    entries.push(...page.activities.filter(a => !sport || a.sport === sport).map(a => ({ user_id: a.userId, distance_m: a.distanceM, moving_sec: a.movingSec, started_at: a.startedAt })));
     cursor = page.next;
   } while (cursor);
   return entries;

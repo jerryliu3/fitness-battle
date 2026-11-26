@@ -9,22 +9,28 @@ import { alpineTrail } from "../ui/club-art";
 
 import { CrewOverview } from "./crew-overview";
 import {
+  CREW_SPORT_OPTIONS,
   SPORTS,
+  type CrewFormatOption,
+  type CrewSportOption,
   type SportId,
   type CrewBoardPin,
   competitionTrack,
   competeNow,
+  countsForTraining,
   countsOnTrack,
+  crewSettingsTargetConfig,
+  crewWeeklyMeasureOptions,
   formatCrewRelayVolume,
   rankSymbolForScore,
   resolveCrewWeekMetric,
+  resolveEditableCrewSettings,
   weeklyPeriodBounds,
   dayKey,
   APP_TIMEZONE,
   accountTimeZone,
   crewMemberWeekValue,
   crewLineup,
-  crewTargetSpec,
   crewInviteHttpsUrl,
   PUBLIC_SHARE_ORIGIN,
   humanizeCrewApiError,
@@ -56,6 +62,7 @@ export interface PrivateCrew {
   format: string;
   target_sessions: number;
   journey_km: number;
+  target_hours?: number;
 }
 interface Member {
   effort_score?: number | null;
@@ -137,9 +144,9 @@ const f=useFocusStyles();
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [editSport, setEditSport] = useState<SportId>("running");
-  const [editFormat, setEditFormat] = useState<"cooperative" | "personal_target">("cooperative");
-  const [editTarget, setEditTarget] = useState<number>(40);
+  const [editSport, setEditSport] = useState<CrewSportOption>("all");
+  const [editFormat, setEditFormat] = useState<CrewFormatOption>("duration");
+  const [editTarget, setEditTarget] = useState<number>(10);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [guestAuthOpen, setGuestAuthOpen] = useState(false);
@@ -221,10 +228,11 @@ const f=useFocusStyles();
         ? `${state.name}’s Circle`
         : "Your Circle",
     invite_code: "",
-    sport: state?.primary ?? "running",
-    format: "cooperative",
+    sport: "all",
+    format: "duration",
     target_sessions: 4,
     journey_km: 40,
+    target_hours: 10,
   };
   const crews = solo ? [preview] : rawCrews;
   const crew = crews.find((c) => c.id === selected) ?? crews[0]!;
@@ -253,12 +261,12 @@ const f=useFocusStyles();
         (m) => m.crew_id === crew.id && (!m.status || m.status === "active"),
       );
   const members = rawMembers.map(m => m.user_id === selfId ? { ...m, avatar_url: state?.avatarUrl ?? null } : m);
+  const soloAllSports = crew.format === "duration" || crew.format === "personal_target" || crew.sport === "strength" || crew.sport === "all";
   const entries: Entry[] = solo
     ? (state?.activities ?? [])
         .filter(
           (a) =>
-            countsOnTrack(a, "open") &&
-            a.sport === crew.sport &&
+            (soloAllSports ? countsForTraining(a) : countsOnTrack(a, "open") && a.sport === crew.sport) &&
             new Date(a.startedAt) >= week.startsAt &&
             new Date(a.startedAt) < week.endsAt &&
             new Date(a.startedAt) <= now,
@@ -355,10 +363,10 @@ const f=useFocusStyles();
       setName("");
       setCode("");
       if (next === "manage") {
-        const isSessions = crew.format === "personal_target" || crew.sport === "strength";
-        setEditSport((SPORTS.some((s) => s.id === crew.sport) ? crew.sport : "running") as SportId);
-        setEditFormat(isSessions ? "personal_target" : "cooperative");
-        setEditTarget(isSessions ? crew.target_sessions : crew.journey_km);
+        const resolved = resolveEditableCrewSettings(crew);
+        setEditSport(resolved.sport);
+        setEditFormat(resolved.format);
+        setEditTarget(resolved.target);
       }
       setPanel(next);
     });
@@ -376,7 +384,8 @@ const f=useFocusStyles();
     try {
       if (!api.live) {
         if (path === "" && method === "PATCH") {
-          const nextSport = (body as { sport?: SportId }).sport ?? (state?.primary ?? "running");
+          const requestedSport = (body as { sport?: CrewSportOption }).sport ?? "all";
+          const nextSport: SportId = requestedSport === "all" ? (state?.primary ?? "running") : requestedSport;
           if (state?.crewBoard) {
             dispatch({
               type: "opt-in",
@@ -390,7 +399,8 @@ const f=useFocusStyles();
         }
         if (path === "") {
           const newName = (body as { name?: string }).name || "My Crew";
-          const newSport = (body as { sport?: string }).sport || state?.primary || "running";
+          const requestedSport = (body as { sport?: CrewSportOption }).sport ?? "all";
+          const newSport: SportId = requestedSport === "all" ? (state?.primary ?? "running") : requestedSport;
           const newId = `demo-crew-${Date.now()}`;
           const newPin = {
             crewId: newId,
@@ -590,7 +600,7 @@ const f=useFocusStyles();
                 <Pressable accessibilityRole="button" accessibilityLabel="Crew settings" onPress={() => open("manage")} style={headerAction}><AppIcon name="settings" size={20} /></Pressable>
               </View>}
           </View>
-          <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
+          <CrewOverview crewId={crew.id} crewName={crew.name} key={`${user?.id}:${crew.id}`} members={members} entries={entries} sport={crew.sport} format={crew.format} targetSessions={crew.target_sessions} targetHours={crew.target_hours ?? 10} targetDistanceM={crew.journey_km * 1000} previousDistanceM={previousDistanceM} units={state?.units} now={(state ? competeNow(state) : new Date()).toISOString()} displayTimeZone={state ? accountTimeZone(state) : undefined} hiddenIds={hiddenIds} onSelectMember={id => setViewingMember(members.find(m => m.user_id === id) ?? null)} onViewMembers={() => open("members")} />
         </SectionStack>
         )
       ) : null}
@@ -709,7 +719,7 @@ const f=useFocusStyles();
               editable={!busy}
             />
             <AppText role="caption" secondary>
-              Defaults to your primary sport and weekly contract goals; adjust anytime in crew settings.
+              Tracks all counted sports by weekly hours by default; adjust anytime in crew settings.
             </AppText>
             <FocusButton
               label={
@@ -727,8 +737,9 @@ const f=useFocusStyles();
                   ? void write("/join", { code: code.trim().toUpperCase() })
                   : void write("", {
                       name: name.trim(),
-                      sport: state?.primary ?? "running",
-                      format: "cooperative",
+                      sport: "all",
+                      format: "duration",
+                      targetHours: 10,
                     })
               }
             />
@@ -779,49 +790,46 @@ const f=useFocusStyles();
             <View style={{ gap: 8 }}>
               <AppText role="label">Crew sport</AppText>
               <ChipRow>
-                {SPORTS.map((sp) => (
+                {CREW_SPORT_OPTIONS.map((sp) => (
                   <Chip
                     key={sp.id}
                     label={sp.name}
                     selected={editSport === sp.id}
                     onPress={() => {
                       setEditSport(sp.id);
-                      if (sp.id === "strength") {
-                        setEditFormat("personal_target");
-                        setEditTarget(crew.target_sessions || 3);
+                      if ((sp.id === "all" || sp.id === "strength") && editFormat === "cooperative") {
+                        setEditFormat("duration");
+                        setEditTarget(crew.target_hours ?? 10);
                       }
                     }}
                   />
                 ))}
               </ChipRow>
             </View>
-            {editSport !== "strength" ? (
-              <View style={{ gap: 8 }}>
-                <AppText role="label">Default weekly measure</AppText>
-                <ChipRow>
-                  {(
-                    [
-                      { id: "cooperative", label: "Shared distance" },
-                      { id: "personal_target", label: "Session targets" },
-                    ] as const
-                  ).map((opt) => (
-                    <Chip
-                      key={opt.id}
-                      label={opt.label}
-                      selected={editFormat === opt.id}
-                      onPress={() => {
-                        setEditFormat(opt.id);
-                        setEditTarget(opt.id === "personal_target" ? crew.target_sessions : crew.journey_km);
-                      }}
-                    />
-                  ))}
-                </ChipRow>
-              </View>
-            ) : null}
+            <View style={{ gap: 8 }}>
+              <AppText role="label">Default weekly measure</AppText>
+              <ChipRow>
+                {crewWeeklyMeasureOptions(editSport).map((opt) => (
+                  <Chip
+                    key={opt.id}
+                    label={opt.label}
+                    selected={editFormat === opt.id}
+                    onPress={() => {
+                      setEditFormat(opt.id);
+                      setEditTarget(
+                        opt.id === "duration"
+                          ? (crew.target_hours ?? 10)
+                          : opt.id === "personal_target"
+                            ? crew.target_sessions
+                            : crew.journey_km,
+                      );
+                    }}
+                  />
+                ))}
+              </ChipRow>
+            </View>
             {(() => {
-              const sessions = editFormat === "personal_target" || editSport === "strength";
-              const spec = crewTargetSpec(sessions ? "session_targets" : "shared_distance_km");
-              const label = sessions ? "Default sessions per member" : "Default shared distance (km)";
+              const { spec, label } = crewSettingsTargetConfig(editSport, editFormat);
               return (
                 <View style={{ gap: 8 }}>
                   <AppText role="caption" secondary>{label}</AppText>
@@ -846,16 +854,16 @@ const f=useFocusStyles();
               label={busy ? "Saving…" : "Save settings"}
               disabled={busy}
               onPress={() => {
-                const sessions = editFormat === "personal_target" || editSport === "strength";
+                const { effectiveFormat } = crewSettingsTargetConfig(editSport, editFormat);
                 void write(
                   "",
                   {
                     crewId: crew.id,
                     sport: editSport,
-                    format: sessions ? "personal_target" : "cooperative",
-                    ...(sessions
-                      ? { targetSessions: Math.round(editTarget), journeyKm: crew.journey_km }
-                      : { journeyKm: editTarget, targetSessions: crew.target_sessions }),
+                    format: effectiveFormat,
+                    targetHours: effectiveFormat === "duration" ? editTarget : (crew.target_hours ?? 10),
+                    targetSessions: effectiveFormat === "personal_target" ? Math.round(editTarget) : crew.target_sessions,
+                    journeyKm: effectiveFormat === "cooperative" ? editTarget : crew.journey_km,
                   },
                   "PATCH",
                 );

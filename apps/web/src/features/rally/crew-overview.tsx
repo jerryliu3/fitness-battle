@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { APP_ICON_PATHS, CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
+import { APP_ICON_PATHS, CREW_INVITE_WEEKLY_PLACEHOLDER, crewMemberRelayColor, crewOverview, crewReplayEvents, readCrewReplay, resolveCrewWeekMetric, weeklyPeriodBounds, type CrewActivityPage, type CrewOverviewInput } from "@fitness-battle/shared";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { UserAvatar } from "@/ui/user-avatar";
 import { CrewRelay } from "./crew-relay";
@@ -22,24 +22,30 @@ export function CrewOverview({ crewId, crewName, onSelectMember, onViewMembers, 
   const { user, offlineMode } = useAuth();
   const [replayEntries, setReplayEntries] = useState<CrewOverviewInput["entries"]>();
   const [replayError, setReplayError] = useState("");
+  const contractUi = useCrewContractModal(crewId, input);
+  const { passport, contract } = contractUi;
+  const activeMetric = resolveCrewWeekMetric({
+    format: input.format,
+    sport: input.sport,
+    contract: contract ? { metric: contract.metric, target: contract.target } : null,
+  });
+  const replaySport = activeMetric === "distance_m" ? input.sport : null;
+  const weekStart = weeklyPeriodBounds(new Date(input.now)).startsAt.toISOString();
   useEffect(() => {
     setReplayEntries(undefined);
     setReplayError("");
     if (offlineMode) { setReplayEntries(input.entries); return; }
     if (!user) return;
     const controller = new AbortController();
-    const since = weeklyPeriodBounds(new Date(input.now)).startsAt.toISOString();
     void readCrewReplay(async cursor => {
-      const params = new URLSearchParams({ crewId, since, limit: "100" });
+      const params = new URLSearchParams({ crewId, since: weekStart, limit: "100" });
       if (cursor) { params.set("before", cursor.before); params.set("beforeId", cursor.beforeId); }
       const response = await fetch(`/api/crews/activities?${params}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) });
       if (!response.ok) throw Error();
       return response.json() as Promise<CrewActivityPage>;
-    }, input.sport).then(rows => { if (!controller.signal.aborted) setReplayEntries(rows); }).catch(() => { if (!controller.signal.aborted) setReplayError("Replay unavailable"); });
+    }, replaySport).then(rows => { if (!controller.signal.aborted) setReplayEntries(rows); }).catch(() => { if (!controller.signal.aborted) setReplayError("Replay unavailable"); });
     return () => controller.abort();
-  }, [crewId, user?.id, offlineMode, input.sport, input.now]);
-  const contractUi = useCrewContractModal(crewId, input);
-  const { passport, contract } = contractUi;
+  }, [crewId, user?.id, offlineMode, replaySport, weekStart]);
   const overviewInput = useMemo<CrewOverviewInput>(
     () => ({ ...input, contract: contract ? { metric: contract.metric, target: contract.target } : null }),
     [input, contract?.metric, contract?.target],

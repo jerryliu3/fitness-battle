@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { crewContractTarget, crewContractValue, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics, crewTargetSpec, formatCrewTargetLabel } from "./crew-passport";
+import { crewContractTarget, crewContractValue, crewSeasonBounds, crewPassportError, crewStampLabel, crewSeasonProgress, crewContractMetrics, crewTargetSpec, crewWeeklyMeasureOptions, formatCrewTargetLabel, resolveEditableCrewSettings } from "./crew-passport";
 
 describe("crew contracts and passport presentation", () => {
   it("converts displayed targets to canonical values without changing sport scores", () => {
     expect(crewContractMetrics("strength").some(m => m.id === "distance_m")).toBe(false);
+    expect(crewContractMetrics("all").some(m => m.id === "distance_m")).toBe(false);
+    expect(crewTargetSpec("duration_hours")).toMatchObject({ min: 1, max: 200, step: 1, defaultValue: 10, unit: "h" });
     expect(crewContractTarget("distance_m", "12.5")).toBe(12500);
     expect(crewContractTarget("moving_sec", "2.5")).toBe(9000);
     expect(crewContractTarget("sessions", "4")).toBe(4);
@@ -34,5 +36,8 @@ describe("crew contracts and passport presentation", () => {
     expect(crewTargetSpec("session_targets")).toMatchObject({ min: 1, max: 14, step: 1, unit: "sessions" });
     expect(formatCrewTargetLabel(1, "sessions")).toBe("1 session");
     expect(formatCrewTargetLabel(40, "km")).toBe("40 km");
+    expect(crewWeeklyMeasureOptions("all").map(o => o.id)).toEqual(["duration", "personal_target"]);
+    expect(crewWeeklyMeasureOptions("running").map(o => o.id)).toEqual(["duration", "cooperative", "personal_target"]);
+    expect(resolveEditableCrewSettings({ sport: "all", format: "duration", target_sessions: 3, journey_km: 40, target_hours: 12 })).toEqual({ sport: "all", format: "duration", target: 12 });
   });
 });
