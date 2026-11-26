@@ -384,3 +384,37 @@ it("shows starting credit at import while hiding score changes through the actua
   expect(chart.points.some(point => ["legacy", "reset"].includes(point.id))).toBe(false);
   expect(chart.points.at(-1)?.value).toBe("395");
 });
+
+it("replays the rollout week from dated workouts and the frozen opening score after settlement", () => {
+  const now = new Date("2026-12-01T17:00:00Z");
+  const state = freshState(now);
+  const opening = { ...createEmptyEffortState(), baselineWeeklyVolume: 7 * 1609.344, starterProgress: 1.6, calibrationSamples: 1 };
+  const starter = { startsAt: "2026-11-23T05:00:00Z", boostEndsAt: "2026-12-23T05:00:00Z", multiplier: 3 };
+  state.effortAccounts = {
+    running: {
+      state: { ...opening, starterProgress: 5, lastSettledWeekId: "2026-11-23" },
+      nextWeek: "2026-11-30",
+      starter,
+      historyAnchor: {
+        displayAt: "2026-11-20T14:00:00Z",
+        occurredAt: "2026-11-26T19:49:00Z",
+        score: 250,
+        replay: { state: opening, starter },
+      },
+    },
+  };
+  state.activities = [{
+    id: "tuesday-run", sport: "running", startedAt: "2026-11-24T13:00:00Z", movingSec: 3600,
+    distanceM: 7 * 1609.344, source: "strava", verified: true, avgHr: null,
+  }];
+  const chart = effortScoreLine(state, "open", "fourWeeks", now);
+  const monday = Date.parse("2026-11-24T04:59:59.999Z");
+  const tuesday = Date.parse("2026-11-25T04:59:59.999Z");
+  const mondayPoint = chart.points.find(point => point.id === `backfill-projection:${monday}`);
+  const tuesdayPoint = chart.points.find(point => point.id === `backfill-projection:${tuesday}`);
+  expect(mondayPoint).toMatchObject({ label: "Nov 23", value: "250" });
+  expect(tuesdayPoint?.label).toBe("Nov 24");
+  expect(Number(tuesdayPoint?.value)).toBeGreaterThan(Number(mondayPoint?.value));
+  expect(chart.points.some(point => point.id === `backfill-projection:${Date.parse("2026-11-30T04:59:59.999Z")}`)).toBe(true);
+  expect(chart.points.filter(point => point.id.startsWith("backfill-projection:")).every(point => !point.label.startsWith("Dec"))).toBe(true);
+});
