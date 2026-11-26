@@ -8,7 +8,7 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import {
-  hasCountedActivityToday, weeklyActivityStreak, competeNow, effectiveRankSymbol,
+  weeklyActivityStreak, competeNow, effectiveRankSymbol,
   APP_ICON_PATHS,
   SHELL_TABS,
   isShellTabId,
@@ -68,7 +68,7 @@ export function PhoneShell({
   } = useCompete();
   const [clock, setClock] = useState(0);
   useEffect(() => { const timer = setInterval(() => setClock(value => value + 1), 60_000); return () => clearInterval(timer); }, []);
-  const streak = useMemo(() => state ? ({ ...weeklyActivityStreak(state.activities, competeNow(state)), activeToday: hasCountedActivityToday(state.activities, competeNow(state)) }) : null, [state, clock]);
+  const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state), state.dailyHealth) : null, [state, clock]);
   const tab = shellTabFromPath(path);
   const onAthlete = productPath.startsWith("/athlete");
   const progressDetail =
@@ -194,7 +194,7 @@ export function PhoneShell({
               />
             </Link>
             <div className="club-header-effort"><EffortRail compact /></div>
-            {streak && <span className={`club-week-streak${streak.activeToday ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.activeToday ? ", active today" : ", inactive today"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.activeToday ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
+            {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={APP_ICON_PATHS[streak.active ? "flameFilled" : "flame"]} fill="currentColor" /></svg><b>{streak.count}</b></span>}
           </div>
           {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
         </header>}

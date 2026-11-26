@@ -122,6 +122,19 @@ describe("mobile navigation parity", () => {
   expect(mock.navigate).toHaveBeenCalledWith("/athlete");
  });
 
+it("lights the weekly streak fire when counted activity exists earlier in the same week", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-05T17:00:00Z"));
+  const state = freshState(new Date("2026-11-05T17:00:00Z"));
+  state.activities = [{ id: "mon", sport: "strength", startedAt: "2026-11-03T15:00:00Z", movingSec: 2400, distanceM: 0, avgHr: null, verified: false, source: "manual", provenance: "manual", disposition: "counted" }];
+  mock.state = state;
+  await act(async () => { renderer = create(createElement(AppHeader)); });
+  const streak = renderer.root.findByProps({ accessibilityLabel: "1 week activity streak" });
+  expect(streak.findByType("AppIcon" as never).props.name).toBe("flameFilled");
+  vi.useRealTimers();
+});
+
 it("hides native debug controls in release builds", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("__DEV__", false);
