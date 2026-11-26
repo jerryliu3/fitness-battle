@@ -342,10 +342,6 @@ importers:
         version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)
 
   packages/rankings:
-    dependencies:
-      '@fitness-battle/shared':
-        specifier: workspace:*
-        version: link:../shared
     devDependencies:
       typescript:
         specifier: ^5.9.2
