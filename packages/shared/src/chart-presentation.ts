@@ -313,6 +313,27 @@ function liveWorkoutScoreRows(state: CompeteState, now: Date) {
   });
 }
 
+/** The rollout week can be replayed after its opening state has settled. */
+function backfillProjectionRows(state: CompeteState, now: Date, beginning: Date) {
+  const anchor = state.effortAccounts?.[state.primary]?.historyAnchor;
+  if (!anchor?.replay) return [];
+  const { state: opening, starter } = anchor.replay;
+  const start = Date.parse(starter.startsAt);
+  const displayAt = Date.parse(anchor.displayAt ?? anchor.occurredAt);
+  const appliedAt = Date.parse(anchor.occurredAt);
+  const week = weeklyPeriodBounds(new Date(start));
+  const last = Math.min(now.getTime(), week.endsAt.getTime() - 1);
+  const lower = Math.max(start, displayAt, beginning.getTime());
+  const dates = Array.from({ length: 7 }, (_, index) => +shiftAppDay(week.startsAt, index + 1) - 1)
+    .filter(at => at >= lower && at <= last && at < now.getTime());
+  if (appliedAt >= lower && appliedAt < last && !dates.includes(appliedAt)) dates.push(appliedAt);
+  return dates.map(at => {
+    const date = new Date(at);
+    const { liveScore } = liveEffortFromActivities(state, state.primary, opening, date, starter, starter.startsAt);
+    return { id: `backfill-projection:${at}`, date: date.toISOString(), value: liveScore };
+  });
+}
+
 /** Committed score changes plus the provisional trajectory in the open week. */
 export function effortScoreLine(state: CompeteState, track: "open" | "verified", range: EffortHistoryRange, now = competeNow(state), createdAt?: string | null) {
   const displayTz = accountTimeZone(state);
@@ -336,9 +357,11 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   };
   const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
   const workouts = liveWorkoutScoreRows(state, now).filter(row => Date.parse(row.date) >= effectiveStart.getTime());
+  const replay = backfillProjectionRows(state, now, effectiveStart);
   const eventDays = new Set([
     ...eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)),
     ...workouts.map(row => dayKey(new Date(row.date), displayTz)),
+    ...replay.map(row => dayKey(new Date(row.date), displayTz)),
   ]);
   const todayKey = dayKey(now, displayTz);
   const startDay = startOfZonedDay(effectiveStart, displayTz);
@@ -367,6 +390,7 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
       kind: "event" as const,
     })),
     ...workouts.map(row => ({ ...row, kind: "day" as const })),
+    ...replay.map(row => ({ ...row, kind: "day" as const })),
   ].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   if (!timeline.length || Date.parse(timeline[0]!.date) > effectiveStart.getTime()) {
     rows.push({
