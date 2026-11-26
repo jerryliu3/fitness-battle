@@ -361,3 +361,26 @@ it("keeps the Effort axis nonnegative at low scores", () => {
   expect(chart.yTicks[0]?.label).toBe("0");
   expect(chart.yTicks.every(tick => Number(tick.label) >= 0)).toBe(true);
 });
+
+it("shows starting credit at import while hiding score changes through the actual backfill", () => {
+  const now = new Date("2026-11-29T17:00:00Z");
+  const state = freshState(now);
+  state.ratings[0]!.openElo = 395;
+  state.effortAccounts = {
+    running: {
+      state: createEmptyEffortState(),
+      nextWeek: "2026-11-30",
+      historyAnchor: { displayAt: "2026-11-23T14:00:00Z", occurredAt: "2026-11-26T19:49:00Z", score: 458 },
+    },
+  };
+  state.effortScoreEvents = [
+    { id: "legacy", sport: "running", track: "open", occurredAt: "2026-11-24T17:00:00Z", scoreBefore: 900, scoreAfter: 4000 },
+    { id: "reset", sport: "running", track: "open", occurredAt: "2026-11-26T19:49:00Z", scoreBefore: 4000, scoreAfter: 458 },
+  ];
+
+  const chart = effortScoreLine(state, "open", "week", now);
+  expect(chart.points.find(point => point.id === "effort-start")).toMatchObject({ value: "458", label: "Nov 23, 9:00 AM" });
+  expect(chart.points.find(point => point.id === "day:2026-11-24")?.value).toBe("458");
+  expect(chart.points.some(point => ["legacy", "reset"].includes(point.id))).toBe(false);
+  expect(chart.points.at(-1)?.value).toBe("395");
+});
