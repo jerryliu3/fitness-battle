@@ -158,10 +158,6 @@ export function PhoneShell({
     router.push(webProductPath(href));
   }
 
-  useEffect(() => {
-    for (const tab of SHELL_TABS) router.prefetch(webProductPath(tab.href));
-  }, [router]);
-
   const accountLoadingBody = panel(
     <p
       className="fb-copy phone-account-loading"

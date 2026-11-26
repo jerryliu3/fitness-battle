@@ -13,7 +13,7 @@ import {
 import { mobileEnv } from "./env";
 import { isTransportError, subscribeNetworkReconnect } from "./network";
 
-export const TAB_READ_TTL = 60_000;
+export const TAB_READ_TTL = 5 * 60_000;
 
 /** Immediate cached render; focus/resume revalidate only when stale. Writes invalidate. */
 export function useCachedApi<T>(path: string | null) {

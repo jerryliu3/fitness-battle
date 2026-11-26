@@ -17,8 +17,8 @@ export async function runBackgroundHealthSyncTask(): Promise<BackgroundFetch.Bac
     }
     const result =
       Platform.OS === "ios"
-        ? await syncAppleHealth()
-        : await syncHealthConnect();
+        ? await syncAppleHealth({ skipIfEmpty: true })
+        : await syncHealthConnect({ skipIfEmpty: true });
     if (!result.ok) {
       return BackgroundFetch.BackgroundFetchResult.Failed;
     }
@@ -50,7 +50,7 @@ export async function registerBackgroundHealthSync(): Promise<boolean> {
     );
     if (registered) return true;
     await BackgroundFetch.registerTaskAsync(BACKGROUND_HEALTH_SYNC_TASK, {
-      minimumInterval: 15 * 60,
+      minimumInterval: 60 * 60,
       stopOnTerminate: false,
       startOnBoot: true,
     });

@@ -82,7 +82,7 @@ describe("background-health-sync", () => {
     expect(mocks.registerTaskAsync).toHaveBeenCalledWith(
       BACKGROUND_HEALTH_SYNC_TASK,
       expect.objectContaining({
-        minimumInterval: 15 * 60,
+        minimumInterval: 60 * 60,
         stopOnTerminate: false,
         startOnBoot: true,
       }),
@@ -105,10 +105,10 @@ describe("background-health-sync", () => {
 
   it("runs Apple Health on iOS and Health Connect on Android", async () => {
     expect(await runBackgroundHealthSyncTask()).toBe(2); // NewData
-    expect(mocks.syncAppleHealth).toHaveBeenCalledTimes(1);
+    expect(mocks.syncAppleHealth).toHaveBeenCalledWith({ skipIfEmpty: true });
 
     mocks.platformOs = "android";
     expect(await runBackgroundHealthSyncTask()).toBe(2); // NewData
-    expect(mocks.syncHealthConnect).toHaveBeenCalledTimes(1);
+    expect(mocks.syncHealthConnect).toHaveBeenCalledWith({ skipIfEmpty: true });
   });
 });

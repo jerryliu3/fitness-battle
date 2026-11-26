@@ -81,7 +81,7 @@ interface CompeteApi {
   standingsStale: boolean;
   retryLoad: () => void;
   dismissFieldNotice: () => void;
-  refresh: (options?: { skipSyncReview?: boolean }) => Promise<boolean>;
+  refresh: (options?: { ifStale?: boolean; skipSyncReview?: boolean }) => Promise<boolean>;
   debugActive?: boolean;
   lastDebugEvent?: { id: DebugEventId; nonce: number } | null;
   triggerDebugEvent?: (event: DebugEventId) => DebugEventResult | null;
@@ -172,7 +172,7 @@ function writeLocal(userId: string | null, state: CompeteState, savedAt: string)
   }
 }
 
-export function CompeteProvider({ children }: { children: ReactNode }) {
+export function CompeteProvider({ children, passive = false }: { children: ReactNode; passive?: boolean }) {
   const { pending: bootCovering, report: reportBootCover } = useBootRequests();
   const { user, loading, offlineMode } = useAuth();
   const userId = user?.id ?? null;
@@ -209,6 +209,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const lifecycle = useRef(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const refreshFlight = useRef<Promise<boolean> | null>(null);
+  const lastRefreshRef = useRef(0);
+  const lastPullSyncRef = useRef(0);
   const [debugActive, setDebugActive] = useState(false);
   const [lastDebugEvent, setLastDebugEvent] = useState<{ id: DebugEventId; nonce: number } | null>(null);
   const debugActiveRef = useRef(false);
@@ -221,6 +223,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   if (!loading && loadedFor !== userId) {
     lifecycle.current += 1;
     revisionRef.current = null; conflictRef.current = false; setSaveConflict(false);
+    lastRefreshRef.current = 0;
+    lastPullSyncRef.current = 0;
     setDraftBackupFailed(false);
     setLoadedFor(userId);
     setState(null);
@@ -426,6 +430,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
     }
 
+    if (passive && local.cached) {
+      settle(local.state, local.savedAt, "ready");
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (!stateRef.current) {
       statusRef.current = "loading";
       setLoadStatus("loading");
@@ -462,6 +473,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         if (!dirty) removeStorageItem(deviceOnlyKey(accountId));
         // A persisted draft is a whole document; retain its units until acknowledged.
         const chosen = applyRemoteSnapshot(local.state, remote, dirty, staleDeviceDraft);
+        lastRefreshRef.current = Date.now();
         settle(
           chosen,
           chosen === local.state ? local.savedAt : (body.updatedAt ?? local.savedAt),
@@ -481,7 +493,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt, offlineMode, loading, publish, scheduleSave, userId, userDisplayName, userEmail]);
+  }, [attempt, offlineMode, loading, passive, publish, scheduleSave, userId, userDisplayName, userEmail]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;
@@ -544,8 +556,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setAttempt((value) => value + 1);
   }, [scheduleSave]);
 
-  const refresh = useCallback(async (options?: { skipSyncReview?: boolean }): Promise<boolean> => {
+  const refresh = useCallback(async (options?: { ifStale?: boolean; skipSyncReview?: boolean }): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
+    if (options?.ifStale && Date.now() - lastRefreshRef.current < FIELD_REFRESH_MS) return true;
     const accountId = userIdRef.current;
     if (!accountId || offlineRef.current || debugActiveRef.current || statusRef.current !== "ready") return true;
     if (refreshFlight.current) return refreshFlight.current;
@@ -586,6 +599,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           publish(accountId, options?.skipSyncReview ? next : holdRemoteRef.current(next), savedAt, "ready", false);
         }
         setStandingsStale(false);
+        lastRefreshRef.current = Date.now();
         return true;
       } catch {
         if (userIdRef.current === accountId) setStandingsStale(true);
@@ -599,10 +613,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [publish]);
 
   useEffect(() => {
-    if (loading || !userId || offlineMode) return;
+    if (loading || !userId || offlineMode || passive) return;
     const kick = () => {
       if (document.visibilityState === "hidden") return;
-      void refresh();
+      void refresh({ ifStale: true });
     };
     document.addEventListener("visibilitychange", kick);
     window.addEventListener("online", kick);
@@ -610,15 +624,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", kick);
       window.removeEventListener("online", kick);
     };
-  }, [offlineMode, loading, refresh, userId]);
+  }, [offlineMode, loading, passive, refresh, userId]);
 
   const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
-    if (loading || !userId || offlineMode || loadStatus !== "ready" || !connectedPullProviders) return;
+    if (loading || !userId || offlineMode || passive || loadStatus !== "ready" || !connectedPullProviders) return;
+    const PULL_SYNC_COOLDOWN_MS = 5 * 60_000;
     let stopped = false, running = false;
-    const sync = async () => {
+    const sync = async (force = false) => {
       if (stopped || running || document.visibilityState === "hidden") return;
+      if (!force && Date.now() - lastPullSyncRef.current < PULL_SYNC_COOLDOWN_MS) return;
       running = true;
+      lastPullSyncRef.current = Date.now();
       try {
         const response = await fetch("/api/fitness/status");
         if (!response.ok) return;
@@ -634,11 +651,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
     void sync();
     const kick = () => { void sync(); };
-    const timer = window.setInterval(kick, 60 * 60_000);
+    const timer = window.setInterval(() => { void sync(true); }, 60 * 60_000);
     document.addEventListener("visibilitychange", kick);
     window.addEventListener("online", kick);
     return () => { stopped = true; clearInterval(timer); document.removeEventListener("visibilitychange", kick); window.removeEventListener("online", kick); };
-  }, [loading, userId, offlineMode, loadStatus, refresh, connectedPullProviders]);
+  }, [loading, userId, offlineMode, passive, loadStatus, refresh, connectedPullProviders]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";

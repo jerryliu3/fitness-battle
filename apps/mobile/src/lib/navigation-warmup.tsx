@@ -3,10 +3,9 @@ import { usePathname, useRouter, type Href } from "expo-router";
 import { AppState, Platform } from "react-native";
 import { useCompeteStore } from "./compete-store";
 
-// Tabs already mount eagerly on iOS and Android/web. Warm only likely child stacks.
+// Tabs already mount eagerly on iOS and Android/web. Warm only likely lightweight child stacks.
 export const NESTED_PREFETCH: Record<string, readonly Href[]> = {
   "/today": ["/week"],
-  "/arena": ["/benchmarks"],
   "/you": ["/progress-history", "/progress-achievements"],
 };
 

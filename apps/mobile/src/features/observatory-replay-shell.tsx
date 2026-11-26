@@ -6,7 +6,6 @@ import type { RaceCoverage } from "@fitness-battle/shared";
 import {
   getCachedCoursePreviews,
   getCachedCoverage,
-  loadAndCompileReplayField,
   loadCoursePreviewsCached,
   loadCoverageCached,
 } from "../lib/observatory-replay-cache";
@@ -74,19 +73,10 @@ export function ObservatoryReplayShell({
     void loadCoursePreviewsCached().then(map => {
       if (!cancelled && map) setCoursePreviews(map);
     });
-    const timer = setTimeout(() => {
-      void loadAndCompileReplayField({
-        editionId: Number(initialEdition || 6),
-        distanceSlug: initialDistance || "marathon",
-        sex: initialSex || "all",
-        ids: initialIds || null,
-      }).catch(() => {});
-    }, 150);
     return () => {
       cancelled = true;
-      clearTimeout(timer);
     };
-  }, [initialDistance, initialEdition, initialIds, initialSex]);
+  }, []);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: c.paper }]} edges={["top", "bottom"]}>

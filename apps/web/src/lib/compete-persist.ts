@@ -484,7 +484,7 @@ export async function loadCompeteAccount(
       {
         id: competeKey,
         summaryPolyline: row.summary_polyline == null ? null : String(row.summary_polyline),
-        detailedPolyline: row.detailed_polyline == null ? null : String(row.detailed_polyline),
+        detailedPolyline: null,
         routeBounds: Array.isArray(row.route_bounds) && row.route_bounds.length === 4 ? row.route_bounds.map(Number) as [number, number, number, number] : null,
         elevationGainM: row.elevation_gain_m == null ? null : Number(row.elevation_gain_m),
         sport,
@@ -820,7 +820,7 @@ async function loadEffortActivities(db: Db,userId:string) {
     const result=await db
       .from("activities")
       .select(
-        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider, summary_polyline, detailed_polyline, route_bounds, elevation_gain_m, journal_only",
+        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider, summary_polyline, route_bounds, elevation_gain_m, journal_only",
       )
       .eq("user_id", userId)
       .not("compete_key", "is", null)

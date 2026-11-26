@@ -52,6 +52,8 @@ export type SyncAppleHealthDeps = {
   syncRange?: { since: string; until: string };
   historyLease?: FitnessHistoryTicket["lease"];
   reviewHistory?: boolean;
+  /** Skip POST /api/fitness/ingest when a background pass finds no workouts or health readings. */
+  skipIfEmpty?: boolean;
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -142,7 +144,7 @@ export function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
-  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "historyLease" | "reviewHistory">,
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "historyLease" | "reviewHistory" | "skipIfEmpty">,
   health?:DeviceHealthExtra,
 ): Promise<DeviceSyncResult> {
   if (deps.localOnly) {
@@ -155,6 +157,16 @@ async function postIngest(
           : "Connected on this phone.",
       count: activities.length,
       activities,
+    };
+  }
+  const hasHealthExtra = (health?.dailyHealth.length ?? 0) > 0 || (health?.sleepNights.length ?? 0) > 0;
+  if (deps.skipIfEmpty && !deps.reviewHistory && !deps.historyLease && activities.length === 0 && !hasHealthExtra) {
+    return {
+      ok: true,
+      authorized: true,
+      message: "Tracker connected. No new workouts found.",
+      count: 0,
+      activities: [],
     };
   }
   const auth = await deps.getAccessToken();
@@ -234,8 +246,9 @@ function healthKitErrorMessage(error: unknown): string {
 }
 
 export async function syncAppleHealth(
-  deps: SyncAppleHealthDeps = defaultAppleHealthDeps(),
+  depsInput: Partial<SyncAppleHealthDeps> = {},
 ): Promise<DeviceSyncResult> {
+  const deps = createAppleHealthDeps(depsInput);
   const kit = resolveAppleHealthKit({
     platform: deps.platform,
     nativeModule: deps.nativeModule,
@@ -354,7 +367,7 @@ function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): b
 
 export type SyncHealthConnectDeps = Pick<
   SyncAppleHealthDeps,
-  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt" | "syncRange" | "historyLease" | "reviewHistory"
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly" | "lastSyncAt" | "syncRange" | "historyLease" | "reviewHistory" | "skipIfEmpty"
 > & {
   platform?: string;
   /** Injectable for tests; defaults to require("react-native-health-connect"). */
@@ -383,14 +396,16 @@ export function createHealthConnectDeps(
     syncRange: base.syncRange,
     historyLease: base.historyLease,
     reviewHistory: base.reviewHistory,
+    skipIfEmpty: base.skipIfEmpty,
     platform: overrides.platform ?? Platform.OS,
     healthModule: overrides.healthModule,
   };
 }
 
 export async function syncHealthConnect(
-  deps: SyncHealthConnectDeps = createHealthConnectDeps(),
+  depsInput: Partial<SyncHealthConnectDeps> = {},
 ): Promise<DeviceSyncResult> {
+  const deps = createHealthConnectDeps(depsInput);
   const platform = deps.platform ?? Platform.OS;
   if (platform !== "android") {
     return { ok: false, message: "Health Connect is only available on Android.", count: 0 };

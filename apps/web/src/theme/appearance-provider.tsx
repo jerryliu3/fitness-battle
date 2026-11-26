@@ -4,8 +4,21 @@ import { getAppColors, resolveColorMode, type AppearancePreference } from "@fitn
 import { APPEARANCE_COOKIE, appearanceVariables, parseAppearance } from "./app-colors";
 
 const AppearanceContext = createContext<{ preference: AppearancePreference; setPreference: (value: AppearancePreference) => void }>({preference:"system",setPreference(){}});
+
+function readAppearanceCookie(): AppearancePreference | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.split("; ").find((row) => row.startsWith(`${APPEARANCE_COOKIE}=`));
+  if (!match) return null;
+  return parseAppearance(decodeURIComponent(match.slice(APPEARANCE_COOKIE.length + 1)));
+}
+
 export function AppearanceProvider({ initialAppearance, children }: { initialAppearance?: string | null; children: ReactNode }) {
   const [preference,setPreference] = useState<AppearancePreference>(()=>parseAppearance(initialAppearance));
+  useEffect(() => {
+    if (initialAppearance != null) return;
+    const saved = readAppearanceCookie();
+    if (saved && saved !== preference) setPreference(saved);
+  }, [initialAppearance]);
   useEffect(()=>{
     const root=document.documentElement;
     root.dataset.appearance=preference;

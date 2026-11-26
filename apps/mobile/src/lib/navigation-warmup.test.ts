@@ -23,10 +23,14 @@ it("lets the parent render first, cancels abandoned warmups, and warms the activ
   await act(async () => { renderer = create(createElement(NavigationWarmup)); });
   await act(async () => { await vi.advanceTimersByTimeAsync(300); });
   expect(mock.prefetch).not.toHaveBeenCalled();
+  mock.path = "/today";
+  await act(async () => renderer.update(createElement(NavigationWarmup)));
+  await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+  expect(mock.prefetch.mock.calls).toEqual([["/week"]]);
   mock.path = "/arena";
   await act(async () => renderer.update(createElement(NavigationWarmup)));
   await act(async () => { await vi.advanceTimersByTimeAsync(600); });
-  expect(mock.prefetch.mock.calls).toEqual([["/benchmarks"]]);
+  expect(mock.prefetch).toHaveBeenCalledTimes(1);
   mock.path = "/you";
   await act(async () => renderer.update(createElement(NavigationWarmup)));
   await act(async () => { await vi.advanceTimersByTimeAsync(900); });

@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -48,6 +49,14 @@ export function ThemeProvider({
   children: ReactNode;
 }) {
   const [theme, setThemeState] = useState(() => getTheme(parseThemeId(initialTheme)));
+  useEffect(() => {
+    if (initialTheme != null || typeof document === "undefined") return;
+    const match = document.cookie.split("; ").find((row) => row.startsWith(`${THEME_COOKIE_NAME}=`));
+    if (!match) return;
+    const saved = getTheme(parseThemeId(decodeURIComponent(match.slice(THEME_COOKIE_NAME.length + 1))));
+    setThemeState(saved);
+    applyTheme(saved);
+  }, [initialTheme]);
   const api = useMemo(
     () => ({
       theme,

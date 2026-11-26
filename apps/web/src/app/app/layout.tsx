@@ -29,10 +29,12 @@ function PlayChrome({ children }: { children: ReactNode }) {
 }
 
 export default function PlayLayout({ children }: { children: ReactNode }) {
+  const path = usePathname() ?? "";
+  const isPace = path === "/app/pace" || path.startsWith("/app/pace/");
   return (
-    <CompeteProvider>
+    <CompeteProvider passive={isPace}>
       <Suspense fallback={null}><OnboardingNavigation /></Suspense>
-      <NotificationTriggers />
+      {!isPace && <NotificationTriggers />}
       <PlayChrome>{children}</PlayChrome>
     </CompeteProvider>
   );

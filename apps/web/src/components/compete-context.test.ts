@@ -275,3 +275,17 @@ it("rejects debug event actions outside development", async () => {
   expect(api.triggerDebugEvent?.("overtake")).toBeNull();
   expect(api.debugActive).toBe(false);
 });
+
+it("reuses cached compete state in passive mode without fetching /api/compete", async () => {
+  const cached = { ...freshState(), city: "Cached City" };
+  values.set("fb-compete-v1:athlete", JSON.stringify({ state: cached, savedAt: "2026-10-22T15:00:00Z" }));
+  fetcher = vi.fn(async () => Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => {
+    renderer = create(createElement(CompeteProvider, { passive: true, children: createElement(Probe) }));
+    await flush();
+  });
+  expect(api.loadStatus).toBe("ready");
+  expect(api.state?.city).toBe("Cached City");
+  expect(fetcher).not.toHaveBeenCalled();
+});
