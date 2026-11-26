@@ -317,6 +317,32 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     attribution: "Official results, The San Francisco Marathon (ChronoTrack Live)",
     note: PUBLIC_LIST,
   },
+  {
+    slug: "tokyo-marathon-2026",
+    sourceSlug: "tokyo_marathon",
+    sourceName: "Tokyo Marathon",
+    eventName: "Tokyo Marathon 2026",
+    externalEventId: "tokyo-marathon-2026",
+    editionYear: 2026,
+    startsOn: "2026-03-01",
+    timeZone: "Asia/Tokyo",
+    distance: "marathon",
+    listUrl: "https://www.marathonguide.com/races/run/tokyo-marathon-copy/2026/results/",
+    mikaEvent: null,
+    chronotrackEventId: null,
+    chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: "fixtures/courses/tokyo-marathon-2026.gpx",
+    replayCourseSourceUrl: "https://www.marathon.tokyo/en/about/course/",
+    replayCourseAttribution:
+      "Tokyo Marathon 2026 course (GPS trace aligned to the official course map)",
+    replayCourseReviewNotes:
+      "Committed GPX trace scaled to 42.195 km for replay checkpoint alignment; finishers are chip-time only (no public splits).",
+    splitProfileId: null,
+    attribution: "Course map, Tokyo Marathon Foundation",
+    note: `${PUBLIC_LIST} Finisher ingest via MarathonGuide pending operator source review.`,
+  },
 ];
 
 export const UNRESOLVED_MAJOR_EVENTS = [
@@ -328,9 +354,9 @@ export const UNRESOLVED_MAJOR_EVENTS = [
   },
   {
     name: "Tokyo Marathon 2026 (MarathonGuide scrape)",
-    url: "https://marathonguide.com/races/run/tokyo-marathon-copy/2026/results/",
+    url: "https://www.marathonguide.com/races/run/tokyo-marathon-copy/2026/results/",
     reason:
-      "Use pnpm rankings:ingest-marathonguide (Runzy API back.runzy.com; ~37k finishers). MarathonGuide HTML is Cloudflare-protected; no splits on this source. Record reuse decision before display.",
+      "Course GPX on catalog slug tokyo-marathon-2026. Finisher list (~37k chip times) still needs MarathonGuide / Runzy ingest after reuse review.",
   },
   {
     name: "TCS Sydney Marathon 2026",

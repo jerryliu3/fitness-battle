@@ -36,4 +36,15 @@ describe("replay course", () => {
       expect(points[i]![2]).toBeGreaterThan(points[i - 1]![2]);
     }
   });
+
+  it("scales committed Tokyo marathon GPX to 42.195 km", () => {
+    const gpx = readFileSync(join(fixtureDir, "courses/tokyo-marathon-2026.gpx"), "utf8");
+    const trkpts = parseGpxTrkpts(gpx);
+    expect(trkpts.length).toBeGreaterThan(500);
+    const points = replayCourseFromGpx(gpx, "marathon");
+    expect(points.at(-1)![2]).toBe(REPLAY_DISTANCE_METRES.marathon);
+    for (let i = 1; i < points.length; i += 1) {
+      expect(points[i]![2]).toBeGreaterThan(points[i - 1]![2]);
+    }
+  });
 });
