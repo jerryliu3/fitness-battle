@@ -325,80 +325,21 @@ export function effortScoreLine(state: CompeteState, track: "open" | "verified",
   const timelineStart = effectiveStart;
   const timelineEnd = shiftZonedDay(timelineStart, effortScoreLookbackDays(range) + 1, displayTz);
   const events = effortScoreEvents(state, track, now);
-  const rows: { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean }[] = [];
   const rating = state.ratings.find(r => r.sport === state.primary);
-  const current = readAccountEffort(state,state.primary,now)?.liveScore ?? (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
-  const scoreAt = (at: Date) => {
-    if (anchor && at.getTime() < Date.parse(anchor.occurredAt)) {
-      return at.getTime() < Date.parse(anchor.displayAt ?? anchor.occurredAt) ? 0 : anchor.score;
-    }
-    return readAccountEffort(state, state.primary, at)?.liveScore ?? effortScoreAt(events, at, current);
-  };
-  const eventsInWindow = events.filter(event => Date.parse(event.occurredAt) >= effectiveStart.getTime());
-  const workouts = liveWorkoutScoreRows(state, now).filter(row => Date.parse(row.date) >= effectiveStart.getTime());
-  const eventDays = new Set([
-    ...eventsInWindow.map(event => dayKey(new Date(event.occurredAt), displayTz)),
-    ...workouts.map(row => dayKey(new Date(row.date), displayTz)),
-  ]);
-  const todayKey = dayKey(now, displayTz);
-  const startDay = startOfZonedDay(effectiveStart, displayTz);
-  const todayStart = startOfZonedDay(now, displayTz);
-  type TimelineRow = { id: string; date: string; value: number; breakBefore?: boolean; inspectable?: boolean };
-  const dailyRows: TimelineRow[] = [];
-  for (let d = 0; ; d += 1) {
-    const day = shiftZonedDay(startDay, d, displayTz);
-    if (day.getTime() >= todayStart.getTime()) break;
-    const key = dayKey(day, displayTz);
-    if (key === todayKey || eventDays.has(key)) continue;
-    const at = day.getTime() < effectiveStart.getTime() ? effectiveStart : day;
-    dailyRows.push({
-      id: `day:${key}`,
-      date: at.toISOString(),
-      value: scoreAt(at),
-    });
+  const current = readAccountEffort(state, state.primary, now)?.liveScore ??
+    (track === "verified" ? rating?.verifiedElo : rating?.openElo) ?? 0;
+  const rows = [
+    ...events.map(event => ({ id: event.id, date: event.occurredAt, value: event.scoreAfter })),
+    ...liveWorkoutScoreRows(state, now),
+    { id: "current", date: now.toISOString(), value: current },
+  ].filter(row => Date.parse(row.date) >= effectiveStart.getTime())
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  if (anchorDate !== undefined && effectiveStart.getTime() < anchorDate) {
+    rows.unshift({ id: "baseline", date: effectiveStart.toISOString(), value: 0 });
   }
-  const timeline = [
-    ...dailyRows.map(row => ({ ...row, kind: "day" as const })),
-    ...eventsInWindow.map(event => ({
-      id: event.id,
-      date: event.occurredAt,
-      value: event.scoreAfter,
-      scoreBefore: event.scoreBefore,
-      kind: "event" as const,
-    })),
-    ...workouts.map(row => ({ ...row, kind: "day" as const })),
-  ].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-  if (!timeline.length || Date.parse(timeline[0]!.date) > effectiveStart.getTime()) {
-    rows.push({
-      id: "baseline",
-      date: effectiveStart.toISOString(),
-      value: scoreAt(effectiveStart),
-      inspectable: false,
-    });
-  }
-  for (const item of timeline) {
-    if (item.kind === "event") {
-      if (!rows.length || rows.at(-1)!.value !== item.scoreBefore) {
-        rows.push({
-          id: `before:${item.id}`,
-          date: new Date(Math.max(effectiveStart.getTime(), Date.parse(item.date) - 1)).toISOString(),
-          value: item.scoreBefore,
-          breakBefore: true,
-          inspectable: false,
-        });
-      }
-      rows.push({ id: item.id, date: item.date, value: item.value });
-    } else {
-      rows.push({ id: item.id, date: item.date, value: item.value });
-    }
-  }
-  rows.push({ id: "current", date: now.toISOString(), value: current, breakBefore: !!rows.length && rows.at(-1)!.value !== current });
-  const chart = openLineModel(rows, value => String(Math.round(value)), 7, { start: timelineStart, end: timelineEnd, showTime: range === "week", step: false, clampYToZero: true, timeZone: displayTz });
-  // Unknown award times remain gaps in the data. Dashed bridges connect the
-  // known readings visually without asserting an award time in that interval.
-  return { ...chart, bridges: chart.segments.slice(1).map((line, index) =>
-    `${chart.segments[index]!.split(" ").at(-1)} ${line.split(" ")[0]}`) };
-
+  return openLineModel(rows, value => String(Math.round(value)), 7, {
+    start: timelineStart, end: timelineEnd, showTime: range === "week", clampYToZero: true, timeZone: displayTz,
+  });
 }
 
 export type BenchmarkBarsModel = ReturnType<typeof benchmarkBars>;

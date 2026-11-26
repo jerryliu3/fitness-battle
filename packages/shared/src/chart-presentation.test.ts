@@ -134,15 +134,7 @@ it("shows every recorded score change, filters sport/track/future, makes every d
   state.ratings[0]!.openElo = 1002;
   state.effortMilestones = [{ sport: "running", track: "open", periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z", step: 1609.344, earned: 2 }];
   const baselineOnly = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
-  expect(baselineOnly.points.map(p => p.id)).toEqual([
-    "day:2026-10-16",
-    "day:2026-10-17",
-    "day:2026-10-18",
-    "day:2026-10-19",
-    "day:2026-10-20",
-    "day:2026-10-21",
-    "current",
-  ]);
+  expect(baselineOnly.points.map(p => p.id)).toEqual(["current"]);
   expect(baselineOnly.points.every(p => p.value === "1002")).toBe(true);
   state.effortScoreEvents = [
     { id: "1", sport: "running", track: "open", occurredAt: "2026-10-22T12:00:00Z", scoreBefore: 1000, scoreAfter: 1001 },
@@ -152,32 +144,11 @@ it("shows every recorded score change, filters sport/track/future, makes every d
     { id: "5", sport: "running", track: "open", occurredAt: "2026-10-23T12:00:00Z", scoreBefore: 1002, scoreAfter: 1003 },
   ];
   const chart = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
-  expect(chart.points.map(p => p.id)).toEqual([
-    "day:2026-10-16",
-    "day:2026-10-17",
-    "day:2026-10-18",
-    "day:2026-10-19",
-    "day:2026-10-20",
-    "day:2026-10-21",
-    "1",
-    "2",
-    "current",
-  ]);
-  expect(chart.points.map(p => p.value)).toEqual([
-    "1000", "1000", "1000", "1000", "1000", "1000",
-    "1001", "1002", "1002",
-  ]);
+  expect(chart.points.map(p => p.id)).toEqual(["1", "2", "current"]);
+  expect(chart.points.map(p => p.value)).toEqual(["1001", "1002", "1002"]);
   expect(chart.points[0]!.x).toBeLessThan(chart.points[1]!.x);
   const withEarlierAccount = effortScoreLine(state, "open", "week", now, "2026-10-18T12:00:00Z");
-  expect(withEarlierAccount.points.map(p => p.id)).toEqual([
-    "day:2026-10-18",
-    "day:2026-10-19",
-    "day:2026-10-20",
-    "day:2026-10-21",
-    "1",
-    "2",
-    "current",
-  ]);
+  expect(withEarlierAccount.points.map(p => p.id)).toEqual(["1", "2", "current"]);
 });
 
 it("does not double count settlements already represented in durable score events", () => {
@@ -187,7 +158,7 @@ it("does not double count settlements already represented in durable score event
   expect(effortScoreLine(state, "open", "week", now).points.map(p => p.id)).not.toContain("settlement:settled");
 });
 
-it("leaves gaps where old milestone award times are unknown", () => {
+it("joins actual settlement points directly without inventing intervening readings", () => {
  const now = new Date("2026-10-22T22:00:00Z"), state = freshState(now);
  state.periodResults = [
    { id: "first", sport: "running", track: "open", periodEnd: "2026-10-19T04:00:00Z", eloBefore: 1000, eloAfter: 1030 },
@@ -195,8 +166,9 @@ it("leaves gaps where old milestone award times are unknown", () => {
  ] as typeof state.periodResults;
  state.ratings[0]!.openElo = 1062;
  const chart = effortScoreLine(state, "open", "week", now, "2026-10-16T04:00:00Z");
- expect(chart.segments).toHaveLength(3); // two known settlement changes and a standalone current reading
- expect(chart.points.map(p => p.value)).toEqual(["1000", "1000", "1000", "1030", "1060", "1060", "1062"]);
+ expect(chart.segments).toHaveLength(1);
+ expect(chart.points.map(p => p.value)).toEqual(["1030", "1060", "1062"]);
+ expect(chart.segments[0]!.split(" ")).toHaveLength(3);
 });
 
 it("grounds the Home week chart on Monday and includes non-competing activities despite mid-week enrollment", () => {
@@ -380,7 +352,8 @@ it("shows starting credit at import while hiding score changes through the actua
 
   const chart = effortScoreLine(state, "open", "week", now);
   expect(chart.points.find(point => point.id === "effort-start")).toMatchObject({ value: "458", label: "Nov 23, 9:00 AM" });
-  expect(chart.points.find(point => point.id === "day:2026-11-24")?.value).toBe("458");
+  expect(chart.points.map(point => point.id)).toEqual(["baseline", "effort-start", "current"]);
+  expect(chart.segments).toHaveLength(1);
   expect(chart.points.some(point => ["legacy", "reset"].includes(point.id))).toBe(false);
   expect(chart.points.at(-1)?.value).toBe("395");
 });
