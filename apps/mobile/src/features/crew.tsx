@@ -14,6 +14,7 @@ import {
   type CrewBoardPin,
   competitionTrack,
   competeNow,
+  countsForTraining,
   countsOnTrack,
   formatCrewRelayVolume,
   rankSymbolForScore,
@@ -253,12 +254,12 @@ const f=useFocusStyles();
         (m) => m.crew_id === crew.id && (!m.status || m.status === "active"),
       );
   const members = rawMembers.map(m => m.user_id === selfId ? { ...m, avatar_url: state?.avatarUrl ?? null } : m);
+  const soloAllSports = crew.format === "personal_target" || crew.sport === "strength";
   const entries: Entry[] = solo
     ? (state?.activities ?? [])
         .filter(
           (a) =>
-            countsOnTrack(a, "open") &&
-            a.sport === crew.sport &&
+            (soloAllSports ? countsForTraining(a) : countsOnTrack(a, "open") && a.sport === crew.sport) &&
             new Date(a.startedAt) >= week.startsAt &&
             new Date(a.startedAt) < week.endsAt &&
             new Date(a.startedAt) <= now,

@@ -104,12 +104,12 @@ export function crewOverview(input: CrewOverviewInput, progress = 1, events: Cre
 }
 
 /** Exhaust the existing scoped activity reader so replay is never a partial week. */
-export async function readCrewReplay(read: (cursor: CrewActivityPage["next"]) => Promise<CrewActivityPage>, sport: string) {
+export async function readCrewReplay(read: (cursor: CrewActivityPage["next"]) => Promise<CrewActivityPage>, sport?: string | null) {
   const entries: CrewOverviewInput["entries"] = [];
   let cursor: CrewActivityPage["next"] = null;
   do {
     const page = await read(cursor);
-    entries.push(...page.activities.filter(a => a.sport === sport).map(a => ({ user_id: a.userId, distance_m: a.distanceM, moving_sec: a.movingSec, started_at: a.startedAt })));
+    entries.push(...page.activities.filter(a => !sport || a.sport === sport).map(a => ({ user_id: a.userId, distance_m: a.distanceM, moving_sec: a.movingSec, started_at: a.startedAt })));
     cursor = page.next;
   } while (cursor);
   return entries;

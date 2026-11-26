@@ -18,6 +18,7 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   state: null as unknown,
   data: null as unknown,
+  passport: null as unknown,
   user: null as unknown,
 }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaView: "SafeAreaView", useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
@@ -76,6 +77,10 @@ vi.mock("../lib/fetch-with-timeout", () => ({
   fetchWithTimeout: async (url: string, options: { body?: string }) => {
     if (url.includes("/crews/sessions"))
       return { ok: true, json: async () => ({ sessions: [] }) };
+    if (url.includes("/crews/passport"))
+      return { ok: true, json: async () => mock.passport ?? { contract: null, seasons: [], stamps: [], badges: [] } };
+    if (url.includes("/crews/activities"))
+      return { ok: true, json: async () => ({ activities: [], next: null }) };
     if (url.endsWith("/rest") && mock.data && options.body) {
       const body = JSON.parse(options.body);
       (
@@ -104,6 +109,7 @@ let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   mock.data = null;
+  mock.passport = null;
   mock.user = null;
   clearApiReads();
   vi.unstubAllGlobals();
@@ -189,6 +195,28 @@ it("opens crew settings with leave crew button and minimal sheet", async () => {
           node.props.open && node.props.title === "Your crew, your rhythm." && node.props.minimal,
       ),
   ).toBe(true);
+});
+
+it("keeps the weekly contract replay button constantly enabled when crew activities are empty", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = true;
+  mock.state = freshState();
+  mock.passport = {
+    contract: { id: "c1", crew_id: "crew", season_id: null, title: "Weekly hours", sport: "running", metric: "moving_sec", target: 36000, value: 0, contributors: 0, roster_size: 1, period_kind: "weekly", time_zone: APP_TIMEZONE, starts_at: "2026-11-09T05:00:00Z", ends_at: "2026-11-16T05:00:00Z", rule_version: 1 },
+    seasons: [], stamps: [], badges: [],
+  };
+  mock.data = {
+    crews: [{ crews: { id: "crew", name: "Runners", sport: "running", format: "volume", journey_km: 40, target_sessions: 4, invite_code: "ABC" } }],
+    members: [{ crew_id: "crew", user_id: "audit", display_name: "You", status: "active", rest_week: null }],
+    entries: [],
+    notices: [],
+  };
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  const playBtn = renderer.root.findByProps({ accessibilityLabel: "Replay this week" });
+  expect(playBtn.props.disabled).toBeFalsy();
+  expect(playBtn.props.style?.opacity).toBeUndefined();
 });
 
 it("does not inject a fake demo crew when running offline", async () => {
