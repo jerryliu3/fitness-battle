@@ -131,7 +131,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
 
   if (confirmation) {
     const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
-    const title = confirmation.pending ? "Finishing your import…" : boost ? "You earned an Effort Boost" : "History imported";
+    const title = confirmation.pending ? "Calibrating your Effort Boost…" : boost ? "You earned an Effort Boost" : "History imported";
     const body = confirmation.pending ? "Saving your selected workouts." : boost
       ? "Your training history earned you a 30-day head start across all sports. Eligible training advances your Effort progression faster."
       : "Your selected workouts are ready to view.";

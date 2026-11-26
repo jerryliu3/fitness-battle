@@ -213,6 +213,15 @@ lease shared across providers; only persisted success consumes the import,
 including a successful empty result. Failure releases it for retry. Disconnecting
 does not reset completion. The settings action locks immediately after success,
 independently of activity review. Legacy calibrated accounts retain their lock.
+Reviewed imports award the starter Effort multiplier in the same database
+transaction as activity acceptance. The starting primary sport supplies evidence.
+At least two days of counted training are required for a boost. Coverage runs
+from the oldest eligible selected session to the import window end, with a
+seven-day allowance near the requested start for rest days. The award is shared
+across sports and expires 30 days after confirmation. Import evidence sets the
+multiplier, and later activity drives live and settled starter Effort.
+Apply the `award_fitness_history_boost` migration before deploying the updated
+review confirmation route.
 Health Connect requests history access for ranges over 30 days and requires it
 before importing; denying access leaves the import retryable with a shorter range.
 The Android manifest permission requires a new native build.

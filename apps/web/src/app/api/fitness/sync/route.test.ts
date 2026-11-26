@@ -67,9 +67,11 @@ it.each(["strava", "whoop", "oura"])("stages %s history without advancing the cu
 
 it("commits only selected, server-staged activities", async () => {
   mock.read.mockResolvedValue({ activities: [{ id: "a" }, { id: "b" }] });
-  mock.activities.mockResolvedValue(true);
+  const boost = { multiplier: 3, startsAt: "2026-11-26T00:00:00Z", boostEndsAt: "2026-12-26T00:00:00Z" };
+  mock.activities.mockResolvedValue(boost);
   const response = await PATCH(request({ historyLease: "ticket", selected: ["b"] }));
   expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ persisted: true, boost });
   expect(mock.activities).toHaveBeenCalledWith("owner", [{ id: "b" }], "recorded", "ticket");
   expect(mock.sync).not.toHaveBeenCalled();
 });

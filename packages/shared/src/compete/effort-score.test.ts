@@ -125,3 +125,17 @@ describe('read-only daily effort projection',()=>{
   }
  });
 });
+
+it('previews the same starter training credit as weekly settlement when all training is observed', () => {
+  const state = createStarterEffortState();
+  const eligibleTrainingXp = trainingXpForVolume('running', 7 * mile);
+  const starterCredit = { ordinaryWeeks: 1, boostedWeeks: 2 };
+  const week = settleEffortWeek('running', state, { weekId: '2026-01-05', eligibleTrainingXp, starterCredit });
+  const preview = calculateLiveEffortScore('running', state, {
+    now: new Date('2026-01-11T20:00:00Z'),
+    trainingXpBeforeToday: 0,
+    trainingXpToday: eligibleTrainingXp,
+    activityCredit: starterCredit,
+  });
+  expect(preview.liveScore).toBe(week.after.displayedScore);
+});

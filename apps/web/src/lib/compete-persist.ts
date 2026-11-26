@@ -4,6 +4,7 @@ import {
   dispositionOf,
   initializeEffortAccounts,
   settleAccountEffort,
+  startAccountEffort,
   competitionMoments,
   readArenaBaseline,
   overtakeMomentForUnits,
@@ -302,6 +303,7 @@ export async function loadCompeteAccount(
     effortScoreEvents,
     attempts,
     overtakeResult,
+    historyImport,
   ] = await Promise.all([
     db
       .from("profiles")
@@ -333,6 +335,7 @@ export async function loadCompeteAccount(
     loadEffortScoreEvents(db, userId),
     loadAllRecordAttempts(db, userId),
     db.from("overtake_receipts").select("account_revision,sport,moment").eq("user_id", userId).order("account_revision", { ascending: false }).limit(50),
+    db.from("fitness_history_imports").select("effort_boost").eq("user_id", userId).maybeSingle(),
   ]);
 
   if (overtakeResult.error) throw new Error("overtake_receipts_unavailable");
@@ -622,7 +625,8 @@ export async function loadCompeteAccount(
   });
 
   return {
-    state: sanitizeCompeteStateForAccount(state),
+    state: sanitizeCompeteStateForAccount(historyImport.data?.effort_boost
+      ? startAccountEffort(state, historyImport.data.effort_boost) : state),
     updatedAt: String(prefs.updated_at ?? new Date().toISOString()),
   };
 }

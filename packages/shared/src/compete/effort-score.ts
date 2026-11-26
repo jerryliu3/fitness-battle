@@ -332,6 +332,8 @@ export interface LiveEffortInput {
   now: Date;
   trainingXpBeforeToday: number;
   trainingXpToday: number;
+  morningCredit?: WeeklyInput["starterCredit"];
+  activityCredit?: WeeklyInput["starterCredit"];
 }
 
 export function calculateLiveEffortScore(sport: Sport, frozen: EffortState, input: LiveEffortInput) {
@@ -341,15 +343,19 @@ export function calculateLiveEffortScore(sport: Sport, frozen: EffortState, inpu
   if (!Number.isFinite(now.getTime())) throw new Error('invalid_live_time');
   const k = (getZonedWeekday(now) + 6) % 7;
   const forecast = frozen.baselineWeeklyVolume ?? 0;
-  const preview = (volume: number, observed: number) => getScoreBreakdown(sport, {
-    ...frozen,
-    baselineWeeklyVolume: updateEffortBaseline(sport, frozen, volume),
-    cumulativeNormalizedVolume: frozen.cumulativeNormalizedVolume + observed / SPORT_CONFIG[sport].referenceVolume,
-  }).displayedScore;
+  const preview = (volume: number, observed: number, credit: WeeklyInput["starterCredit"]) => {
+    const candidate = {
+      ...frozen,
+      baselineWeeklyVolume: updateEffortBaseline(sport, frozen, volume),
+      cumulativeNormalizedVolume: frozen.cumulativeNormalizedVolume + observed / SPORT_CONFIG[sport].referenceVolume,
+    };
+    applyStarterCredit(sport, frozen, candidate, credit);
+    return getScoreBreakdown(sport, candidate).displayedScore;
+  };
   const morningProjectedVolume = a + (7 - k) / 7 * forecast;
   const activityProjectedVolume = a + d + (6 - k) / 7 * forecast;
-  const morningScore = preview(morningProjectedVolume, a);
-  const activityScore = preview(activityProjectedVolume, a + d);
+  const morningScore = preview(morningProjectedVolume, a, input.morningCredit);
+  const activityScore = preview(activityProjectedVolume, a + d, input.activityCredit);
   const liveScore = Math.max(morningScore, activityScore);
   return {
     settledScore: getScoreBreakdown(sport, frozen).displayedScore,
