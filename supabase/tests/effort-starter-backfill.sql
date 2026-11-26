@@ -8,7 +8,7 @@ declare
   scores jsonb := '{"running":250,"cycling":0,"walking":0,"strength":0}';
   accounts jsonb := '{"running":{},"cycling":{},"walking":{},"strength":{}}';
 begin
-  insert into auth.users(id, email, created_at) values (athlete, athlete::text || '@test.invalid', start_at - interval '1 day');
+  insert into auth.users(id, email, created_at) values (athlete, athlete::text || '@test.invalid', start_at + interval '1 day');
   insert into public.profiles(id, display_name) values (athlete, 'Backfill test') on conflict (id) do nothing;
   insert into public.athlete_prefs(user_id) values (athlete) on conflict (user_id) do nothing;
   insert into public.sport_ratings(user_id, sport, open_elo, verified_elo, lock_open, lock_verified, lock_period)
@@ -23,6 +23,8 @@ begin
   exception when others then if sqlerrm <> 'forbidden' then raise; end if; end;
 
   perform set_config('request.jwt.claim.role', 'service_role', true);
+  if not exists (select 1 from public.list_effort_backfill_accounts(start_at, null) where user_id = athlete)
+    then raise exception 'account created after cutover was not listed'; end if;
   if public.commit_effort_backfill(athlete, start_at, revision - interval '1 second', accounts, scores) <> 'conflict'
     then raise exception 'stale account revision accepted'; end if;
   if public.commit_effort_backfill(athlete, start_at, revision, accounts, scores) <> 'applied'
