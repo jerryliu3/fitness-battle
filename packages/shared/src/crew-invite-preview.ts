@@ -12,24 +12,29 @@ export type CrewInvitePreviewMember = {
 export type CrewInvitePreviewPayload = {
   id: string;
   name: string;
-  sport: SportId | string;
+  sport: SportId | "all" | string;
   format: string;
   target_sessions: number;
   journey_km: number;
+  target_hours?: number;
   invite_code: string;
   member_count: number;
   members: CrewInvitePreviewMember[];
 };
 
 export function crewInviteSportName(sport: string): string {
+  if (sport === "all") return "All sports";
   return SPORTS.find((item) => item.id === sport)?.name ?? sport;
 }
 
 export function crewInviteUsesSessionMetric(preview: Pick<CrewInvitePreviewPayload, "format" | "sport">): boolean {
-  return preview.format === "personal_target" || preview.sport === "strength";
+  return preview.format !== "duration" && (preview.format === "personal_target" || preview.sport === "strength" || preview.sport === "all");
 }
 
-export function crewInviteTargetLabel(preview: Pick<CrewInvitePreviewPayload, "format" | "sport" | "target_sessions" | "journey_km">): string {
+export function crewInviteTargetLabel(preview: Pick<CrewInvitePreviewPayload, "format" | "sport" | "target_sessions" | "journey_km" | "target_hours">): string {
+  if (preview.format === "duration") {
+    return formatCrewTargetLabel(preview.target_hours ?? 10, "h");
+  }
   return crewInviteUsesSessionMetric(preview)
     ? formatCrewTargetLabel(preview.target_sessions, "sessions")
     : formatCrewTargetLabel(preview.journey_km, "km");

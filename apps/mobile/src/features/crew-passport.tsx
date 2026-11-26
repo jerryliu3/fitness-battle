@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { crewContractMetrics, crewContractTarget, crewContractValue, crewTargetSpec, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewContractMetrics, crewContractTarget, crewContractValue, crewTargetSpec, resolveCrewWeekMetric, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useCrewPassport } from "./use-crew-passport";
 import { Pressable, TextInput, View } from "react-native";
 import { useFocusStyles, FocusSheet, FocusButton } from "../ui/focus";
@@ -7,7 +7,8 @@ import { NumberStepper } from "../ui/number-stepper";
 import { AppText } from "../ui/section";
 
 export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
-  const { sport, units } = input;
+  const { sport, format, units } = input;
+  const defaultMetric = resolveCrewWeekMetric({ format, sport });
   const f = useFocusStyles();
   const passport = useCrewPassport(crewId, input);
   const { data, error: loadError, reload, save: write, available, unavailable } = passport;
@@ -19,10 +20,10 @@ export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
   const [editing, setEditing] = useState(false);
   const [expectedId, setExpectedId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [metric, setMetric] = useState<CrewContractMetric>(sport === "strength" ? "sessions" : "distance_m");
-  const [target, setTarget] = useState<number>(40);
+  const [metric, setMetric] = useState<CrewContractMetric>(defaultMetric);
+  const [target, setTarget] = useState<number>(crewTargetSpec(defaultMetric).defaultValue);
   function editContract() {
-    const nextMetric = contract?.metric ?? (sport === "strength" ? "sessions" : "distance_m");
+    const nextMetric = contract?.metric ?? resolveCrewWeekMetric({ format, sport });
     setExpectedId(contract?.id ?? null); setTitle(contract?.title ?? ""); setMetric(nextMetric);
     setTarget(contract ? Math.max(1, Math.round(contract.target / (contract.metric === "distance_m" ? 1000 : contract.metric === "moving_sec" ? 3600 : 1))) : crewTargetSpec(nextMetric).defaultValue);
     setEditing(true);

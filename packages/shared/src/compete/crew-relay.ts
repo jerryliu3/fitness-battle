@@ -104,12 +104,12 @@ export function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
 export function resolveCrewWeekMetric(
   input: Pick<CrewWeekRelayInput, "format" | "sport" | "contract">,
 ): CrewContractMetric {
-  return (
-    input.contract?.metric ??
-    (input.format === "personal_target" || input.sport === "strength"
-      ? "sessions"
-      : "distance_m")
-  );
+  if (input.contract?.metric) return input.contract.metric;
+  if (input.format === "duration") return "moving_sec";
+  if (input.format === "personal_target" || input.sport === "strength" || input.sport === "all") {
+    return "sessions";
+  }
+  return "distance_m";
 }
 
 function crewMemberWeekValueForMetric(
@@ -192,6 +192,7 @@ export interface CrewWeekRelayInput {
   sport: string;
   format: string;
   targetSessions: number;
+  targetHours?: number | null;
   targetDistanceM?: number | null;
   previousDistanceM?: number | null;
   contract?: {
@@ -209,6 +210,12 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
       : null;
   const metric = resolveCrewWeekMetric(input);
   const sessions = metric === "sessions";
+  const durationTarget =
+    metric === "moving_sec" &&
+    Number.isFinite(input.targetHours) &&
+    Number(input.targetHours) > 0
+      ? Number(input.targetHours) * 3600
+      : null;
   const distanceTarget =
     Number.isFinite(input.targetDistanceM) && Number(input.targetDistanceM) > 0
       ? Number(input.targetDistanceM)
@@ -220,9 +227,11 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
       : null;
   const target =
     contractTarget ??
-    (sessions
-      ? input.targetSessions * input.members.length
-      : (distanceTarget ?? baseline));
+    (metric === "moving_sec"
+      ? durationTarget
+      : sessions
+        ? input.targetSessions * input.members.length
+        : (distanceTarget ?? baseline));
   const kind =
     metric === "moving_sec"
       ? "time"

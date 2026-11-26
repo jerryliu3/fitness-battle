@@ -21,7 +21,7 @@ export function crewLineup<T extends { user_id: string; display_name: string }>(
   sport: string,
   metric?: CrewContractMetric,
 ) {
-  const activeMetric = metric ?? (sport === "strength" ? "sessions" : "distance_m");
+  const activeMetric = metric ?? (sport === "strength" || sport === "all" ? "sessions" : "distance_m");
   const totals = new Map<string, number>();
   for (const e of entries) {
     const add = activeMetric === "sessions"

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const normalized = code.toLowerCase();
   const { data: crew, error: crewError } = await db
     .from("crews")
-    .select("id, name, sport, format, target_sessions, journey_km, invite_code")
+    .select("id, name, sport, format, target_sessions, journey_km, target_hours, invite_code")
     .ilike("invite_code", normalized)
     .maybeSingle();
   if (crewError) {
@@ -67,6 +67,7 @@ export async function GET(request: Request) {
     format: crew.format,
     target_sessions: crew.target_sessions,
     journey_km: Number(crew.journey_km),
+    target_hours: Number(crew.target_hours ?? 10),
     invite_code: crew.invite_code,
     member_count: members.length,
     members,

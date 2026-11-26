@@ -1,13 +1,14 @@
 "use client";
 import { useRef, useState } from "react";
-import { crewContractMetrics, crewContractTarget, crewContractValue, crewTargetSpec, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
+import { crewContractMetrics, crewContractTarget, crewContractValue, crewTargetSpec, resolveCrewWeekMetric, type CrewContractMetric, type CrewPassportMutation, type CrewOverviewInput } from "@fitness-battle/shared";
 import { useCrewPassport } from "./use-crew-passport";
 import { AppHeading, AppParagraph, AppText } from "@/ui/section";
 import { NumberStepper } from "@/ui/number-stepper";
 import { Sheet } from "@/ui/sheet";
 
 export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
-  const { sport, units } = input;
+  const { sport, format, units } = input;
+  const defaultMetric = resolveCrewWeekMetric({ format, sport });
   const passport = useCrewPassport(crewId, input);
   const { data, error: loadError, reload, save: write, available, unavailable } = passport;
   const contract = data?.contract ?? null;
@@ -18,10 +19,10 @@ export function useCrewContractModal(crewId: string, input: CrewOverviewInput) {
   const [editing, setEditing] = useState(false);
   const [expectedId, setExpectedId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [metric, setMetric] = useState<CrewContractMetric>(sport === "strength" ? "sessions" : "distance_m");
-  const [target, setTarget] = useState<number>(40);
+  const [metric, setMetric] = useState<CrewContractMetric>(defaultMetric);
+  const [target, setTarget] = useState<number>(crewTargetSpec(defaultMetric).defaultValue);
   function editContract() {
-    const nextMetric = contract?.metric ?? (sport === "strength" ? "sessions" : "distance_m");
+    const nextMetric = contract?.metric ?? resolveCrewWeekMetric({ format, sport });
     setExpectedId(contract?.id ?? null);
     setTitle(contract?.title ?? "");
     setMetric(nextMetric);

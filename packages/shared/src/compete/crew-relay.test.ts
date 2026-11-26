@@ -70,6 +70,20 @@ it("marks an all-zero crew week as empty and explains session roster targets",()
  expect(crewRelayRosterFootnote(true,1,2)).toMatch(/logged yet/);
  expect(crewRelayRosterFootnote(false,1,2)).toBeNull();
 });
+it("uses shared hours and moving_sec when format is duration", () => {
+  const result = crewWeekRelay({
+    members: [{ user_id: "a", display_name: "A" }],
+    entries: [{ user_id: "a", distance_m: 0, moving_sec: 18000 }],
+    format: "duration",
+    sport: "all",
+    targetSessions: 3,
+    targetHours: 10,
+  });
+  expect(result.metric).toBe("moving_sec");
+  expect(result.kind).toBe("time");
+  expect(result.target).toBe(36000);
+  expect(result.model.total).toBe(18000);
+});
 it("keeps final roster colors as teammates begin contributing during playback", () => {
   const members = ["alex", "sam", "you"].map(user_id => ({ user_id, display_name: user_id }));
   const input = { members, sport: "running", format: "relay", targetSessions: 12 };

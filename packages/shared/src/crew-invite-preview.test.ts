@@ -31,8 +31,14 @@ describe("crewInviteTargetLabel", () => {
     expect(crewInviteTargetLabel(basePreview())).toBe("40 km");
   });
 
-  it("uses sessions for strength crews", () => {
+  it("uses sessions for strength or all-sport non-duration crews", () => {
     expect(crewInviteTargetLabel({ ...basePreview(), sport: "strength" })).toBe("5 sessions");
+    expect(crewInviteTargetLabel({ ...basePreview(), sport: "all" })).toBe("5 sessions");
+  });
+
+  it("uses hours for duration crews", () => {
+    expect(crewInviteTargetLabel({ ...basePreview(), sport: "all", format: "duration", target_hours: 12 })).toBe("12 h");
+    expect(crewInviteTargetLabel({ ...basePreview(), sport: "all", format: "duration" })).toBe("10 h");
   });
 });
 
