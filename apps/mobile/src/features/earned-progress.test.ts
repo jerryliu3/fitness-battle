@@ -19,6 +19,7 @@ vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
 vi.mock("../ui/sport-icon",()=>({SportIcon:"SportIcon"}));
 vi.mock("../ui/activity-route",()=>({ActivityRoute:()=>null}));
 vi.mock("../lib/haptics",()=>({playCue:vi.fn()}));
+vi.mock("../lib/env", () => ({ mobileEnv: { previewEffortBoost: false } }));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
 import { TrainingAtlas } from "./training-atlas";
