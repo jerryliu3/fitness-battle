@@ -33,6 +33,7 @@ function locationForSlug(slug) {
     nyrr_nyc_marathon: "New York, NY",
     sf_marathon: "San Francisco, CA",
     toronto_waterfront_marathon: "Toronto, ON",
+    tokyo_marathon: "Tokyo, JP",
   };
   return map[slug] ?? "";
 }

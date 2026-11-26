@@ -317,6 +317,32 @@ export const MAJOR_EVENTS: CatalogEvent[] = [
     attribution: "Official results, The San Francisco Marathon (ChronoTrack Live)",
     note: PUBLIC_LIST,
   },
+  {
+    slug: "tokyo-marathon-2025",
+    sourceSlug: "tokyo_marathon",
+    sourceName: "Tokyo Marathon",
+    eventName: "Tokyo Marathon 2025",
+    externalEventId: "tokyo-marathon-2025",
+    editionYear: 2025,
+    startsOn: "2025-03-02",
+    timeZone: "Asia/Tokyo",
+    distance: "marathon",
+    listUrl: "https://www.marathonguide.com/races/run/tokyo-marathon-copy/2025/results/",
+    mikaEvent: null,
+    chronotrackEventId: null,
+    chronotrackRaceId: null,
+    racedayTimingPath: null,
+    mapmyrunRouteId: null,
+    replayCourseGpxFixture: "fixtures/courses/tokyo-marathon-2025.gpx",
+    replayCourseSourceUrl: "https://www.marathon.tokyo/en/about/course/",
+    replayCourseAttribution:
+      "Tokyo Marathon 2025 course (GPS trace aligned to the official course map)",
+    replayCourseReviewNotes:
+      "Committed GPX trace scaled to 42.195 km for replay checkpoint alignment. Finishers: MarathonGuide / Runzy list (chip times only; no public splits).",
+    splitProfileId: null,
+    attribution: "Finisher list via MarathonGuide (Runzy API mirror); course map, Tokyo Marathon Foundation",
+    note: `${PUBLIC_LIST} MikaTiming list returned 403 from unattended fetch; use pnpm rankings:ingest-marathonguide after operator source review.`,
+  },
 ];
 
 export const UNRESOLVED_MAJOR_EVENTS = [
@@ -327,10 +353,10 @@ export const UNRESOLVED_MAJOR_EVENTS = [
       "Resolved: POST rmsprodapi.nyrr.org/api/v2/runners/resultDetails returns splitResults (no HTML scrape). Use pnpm rankings:nyrr-splits after finishers are staged.",
   },
   {
-    name: "Tokyo Marathon 2026 (MarathonGuide scrape)",
-    url: "https://marathonguide.com/races/run/tokyo-marathon-copy/2026/results/",
+    name: "Tokyo Marathon 2026 (MarathonGuide)",
+    url: "https://www.marathonguide.com/races/run/tokyo-marathon-copy/2026/results/",
     reason:
-      "Use pnpm rankings:ingest-marathonguide (Runzy API back.runzy.com; ~37k finishers). MarathonGuide HTML is Cloudflare-protected; no splits on this source. Record reuse decision before display.",
+      "2025 course and finishers are on catalog slug tokyo-marathon-2025. Retarget ingest for 2026 after the edition is on MarathonGuide.",
   },
   {
     name: "TCS Sydney Marathon 2026",

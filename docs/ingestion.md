@@ -94,7 +94,10 @@ Replay course tracks for the observatory/replay renderer live in `public.ranking
 ```sh
 pnpm rankings:course -- --slug banff-half-2026 --display-allowed
 pnpm rankings:course -- --slug sf-marathon-2026 --display-allowed
+pnpm rankings:course -- --slug tokyo-marathon-2025 --display-allowed
 ```
+
+Tokyo uses the committed `fixtures/courses/tokyo-marathon-2025.gpx` trace (official course map), scaled to `42.195 km`. Finishers (chip times only, no splits) use MarathonGuide's JSON API via `pnpm rankings:ingest-marathonguide -- --slug tokyo-marathon-2025` after source review; Cloudflare may block unattended cloud fetches.
 
 Banff uses the organizer-linked MapMyRun route (`5544185092`). SF uses the committed `fixtures/courses/sf-marathon-2026-full.gpx` trace aligned to the published 2026 course map, scaled to exactly `42.195 km` / `21.0975 km` so `private.valid_replay_course` passes.
 
