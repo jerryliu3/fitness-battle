@@ -1,7 +1,7 @@
 import { useFocusStyles } from "../ui/focus";
 import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -178,7 +178,13 @@ export function AthletePublicProfileScreen() {
       />
       <ScrollView contentContainerStyle={f.content} showsVerticalScrollIndicator={false}>
         <SectionStack divided={false}>
-          <AthleteCrest model={cardModel} />
+          {loading && !remote && !profile ? (
+            <View style={{ minHeight: 430, justifyContent: "center", alignItems: "center" }}>
+              <ActivityIndicator size="small" />
+            </View>
+          ) : (
+            <AthleteCrest model={cardModel} />
+          )}
           {params.contextValue ? (
             <View style={f.section}>
               <SectionHeader title={params.contextLabel ?? "Summary"} />

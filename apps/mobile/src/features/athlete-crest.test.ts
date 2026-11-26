@@ -4,10 +4,9 @@ import { afterEach, expect, it, vi } from "vitest";
 import { athleteCardModel, freshState } from "@fitness-battle/shared";
 const scene = vi.hoisted(() => ({ active: true, inject: vi.fn() }));
 vi.mock("../ui/use-scene-active", () => ({ useSceneActive: () => scene.active }));
-vi.mock("../theme", () => ({ useAppTheme: () => ({ mode: "light", colors: { paper: "white" } }) }));
+vi.mock("../theme", () => ({ useAppTheme: () => ({ mode: "light", colors: { paper: "white", muted: "gray" } }) }));
 vi.mock("../ui/section", () => ({ AppText: "Text" }));
-vi.mock("react-native", () => ({ View: "View", Pressable: "Pressable" }));
-vi.mock("./athlete-profile-card", () => ({ AthleteProfileCard: "Fallback" }));
+vi.mock("react-native", () => ({ ActivityIndicator: "ActivityIndicator", View: "View", Pressable: "Pressable" }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://example.test" } }));
 vi.mock("react-native-webview", async () => {
   const { createElement, forwardRef, useImperativeHandle } = await import("react");
@@ -20,7 +19,7 @@ const model = athleteCardModel(freshState(new Date("2026-11-08T12:00:00Z")));
 it("handshakes before sending data, pauses on blur and releases native scrolling", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const interaction = vi.fn();
-  await act(async () => { renderer = create(createElement(AthleteCrest, { model, onInteractionChange: interaction })); });
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model, bundled: false, onInteractionChange: interaction })); });
   const web = renderer.root.findByType("WebView" as never);
   expect(web.props.source.uri).toBe("https://example.test/athlete-card-scene");
   expect(scene.inject).not.toHaveBeenCalled();
@@ -28,20 +27,21 @@ it("handshakes before sending data, pauses on blur and releases native scrolling
   expect(scene.inject).toHaveBeenCalledWith(expect.stringContaining('"active":true'));
   await act(async () => web.props.onTouchStart()); expect(interaction).toHaveBeenLastCalledWith(true);
   scene.active = false;
-  await act(async () => renderer.update(createElement(AthleteCrest, { model: { ...model }, onInteractionChange: interaction })));
+  await act(async () => renderer.update(createElement(AthleteCrest, { model: { ...model }, bundled: false, onInteractionChange: interaction })));
   expect(scene.inject).toHaveBeenLastCalledWith(expect.stringContaining('"active":false'));
   expect(interaction).toHaveBeenLastCalledWith(false);
 });
-it("keeps the fallback after process termination and ignores stale acknowledgements", async () => {
+it("shows a loading indicator until rendered, shows an error after termination, and ignores stale acknowledgements", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  await act(async () => { renderer = create(createElement(AthleteCrest, { model: { ...model, score: 5000, rank: "Active" } })); });
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model: { ...model, score: 5000, rank: "Active" }, bundled: false })); });
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(1);
   const web = renderer.root.findByType("WebView" as never);
   expect(web.props.onShouldStartLoadWithRequest({ url: "https://example.test/athlete-card-scene-malicious" })).toBe(false);
   const staleMessage = web.props.onMessage;
   await act(async () => web.props.onContentProcessDidTerminate());
   await act(async () => staleMessage({ nativeEvent: { data: '{"type":"athlete-card-rendered"}' } }));
-  expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(1);
-  expect(renderer.root.findByType("Fallback" as never).props.rank).toBe("Active");
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(0);
+  expect(renderer.root.findByType("Text" as never).props.children).toBe("Could not load your athlete card.");
   expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(0);
 });
@@ -110,16 +110,18 @@ it("retries a failed retained scene on the next visit", async () => {
   expect(renderer.root.findAllByType("WebView" as never)).toHaveLength(1);
 });
 
-it("loads the profile crest from the bundled scene without a server URL", async () => {
+it("loads the profile crest from the bundled scene by default without a server URL", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  await act(async () => { renderer = create(createElement(AthleteCrest, { model, bundled: true })); });
+  await act(async () => { renderer = create(createElement(AthleteCrest, { model })); });
   const web = renderer.root.findByType("WebView" as never);
   expect(web.props.source.uri).toBeUndefined();
   expect(web.props.source.html).toContain('id="root"');
-  expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("Text" as never)).toHaveLength(0);
   expect(web.props.onShouldStartLoadWithRequest({ url: "https://example.test/athlete-card-scene" })).toBe(false);
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-ready"}' } }));
+  await act(async () => web.props.onMessage({ nativeEvent: { data: '{"type":"athlete-card-rendered"}' } }));
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(0);
   await act(async () => web.props.onError());
-  expect(renderer.root.findAllByType("Fallback" as never)).toHaveLength(0);
   expect(renderer.root.findByType("Text" as never).props.children).toBe("Could not load your athlete card.");
 });

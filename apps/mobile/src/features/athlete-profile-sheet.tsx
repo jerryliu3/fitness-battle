@@ -1,6 +1,6 @@
 import { useFocusStyles } from "../ui/focus";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { SPORTS, athleteCardModel, athleteCardModelForPeer, formatMemberSince, shellTabFromPath } from "@fitness-battle/shared";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
@@ -51,6 +51,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
   const { blocks, ready: blocksReady, setBlocked } = useAthleteBlocks();
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [openOwnPage, setOpenOwnPage] = useState(false);
   const [pendingFullProfile, setPendingFullProfile] = useState<Record<string, string> | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -69,14 +70,21 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
     setNotice("");
     setBusy(false);
     if (athlete && !athlete.you && user && !offlineMode && isAccountId(athlete.id)) {
-      void supabase
-        .from("profiles")
-        .select("city, country_code, created_at, lifetime_overtakes, primary_sport")
-        .eq("id", athlete.id)
-        .maybeSingle()
-        .then(({ data }) => {
+      setProfileLoading(true);
+      void (async () => {
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("city, country_code, created_at, lifetime_overtakes, primary_sport")
+            .eq("id", athlete.id)
+            .maybeSingle();
           if (!cancelled && data) setProfile(data as PublicProfile);
-        });
+        } finally {
+          if (!cancelled) setProfileLoading(false);
+        }
+      })();
+    } else {
+      setProfileLoading(false);
     }
     return () => {
       cancelled = true;
@@ -178,7 +186,13 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
         <View style={{ gap: 20 }}>
           {cardModel ? (
             <View style={{ gap: 14 }}>
-              <AthleteCrest model={cardModel} />
+              {profileLoading ? (
+                <View style={{ minHeight: 430, justifyContent: "center", alignItems: "center" }}>
+                  <ActivityIndicator size="small" />
+                </View>
+              ) : (
+                <AthleteCrest model={cardModel} />
+              )}
               {!athlete.you && isAccountId(athlete.id) ? (
                 <View style={{ alignItems: "center" }}>
                   <FocusButton

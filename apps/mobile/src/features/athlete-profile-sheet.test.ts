@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   blocks: [] as { id: string; name: string }[],
   pathname: "/arena",
 }));
-vi.mock("react-native", () => ({useColorScheme: () => "light",  View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
+vi.mock("react-native", () => ({useColorScheme: () => "light",  ActivityIndicator: "ActivityIndicator", View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
 vi.mock("expo-router", () => ({
   useRouter: () => ({ navigate: mocks.navigate, push: mocks.navigate }),
   usePathname: () => mocks.pathname,
@@ -40,6 +40,21 @@ beforeEach(() => {
   mocks.request.mockResolvedValue({ sent: true });
   mocks.lookup.mockResolvedValue({ data: { city: "Toronto", country_code: "CA", created_at: "2025-03-01T00:00:00Z", lifetime_overtakes: 8, primary_sport: "running" } });
 });
+it("waits for public profile resolution with a loading indicator before mounting the 3D card", async () => {
+  let resolveLookup!: (value: unknown) => void;
+  mocks.lookup.mockImplementationOnce(() => new Promise((resolve) => { resolveLookup = resolve; }));
+  await act(async () => {
+    renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100 }, onClose: mocks.close }));
+  });
+  expect(renderer.root.findAllByType("AthleteCrest" as never)).toHaveLength(0);
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(1);
+  await act(async () => {
+    resolveLookup({ data: { city: "Toronto", country_code: "CA", created_at: "2025-03-01T00:00:00Z", lifetime_overtakes: 8, primary_sport: "running" } });
+  });
+  expect(renderer.root.findAllByType("ActivityIndicator" as never)).toHaveLength(0);
+  expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", memberSince: "Since 2/25" });
+});
+
 it("loads public identity and shows the selected standings context", async () => {
   await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer", score: 1100, contextValue: "5.0 km", contextDetail: "Place 2" }, onClose: mocks.close })); });
   expect(renderer.root.findByType("AthleteCrest" as never).props.model).toMatchObject({ name: "Peer", city: "Toronto", score: 1100, memberSince: "Since 2/25" });

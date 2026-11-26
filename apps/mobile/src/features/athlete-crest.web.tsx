@@ -1,14 +1,13 @@
 import { memo, createElement, useEffect, useRef, useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import type { AthleteCardModel } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { useSceneActive } from "../ui/use-scene-active";
 import { AppText } from "../ui/section";
-import { AthleteProfileCard } from "./athlete-profile-card";
 import { useAppTheme } from "../theme";
 
 /** Expo web uses the same host and model; native uses a WebView. */
-export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false, bundled = false, height = 390 }: { model: AthleteCardModel; bundled?: boolean; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
+export const AthleteCrest = memo(function AthleteCrest({ model, active: suppliedActive = true, transparent = false, bundled = true, height = 390 }: { model: AthleteCardModel; bundled?: boolean; active?: boolean; transparent?: boolean; height?: number; onInteractionChange?: (held: boolean) => void }) {
   const active = useSceneActive() && suppliedActive;
   const { mode, colors } = useAppTheme();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -35,10 +34,10 @@ export const AthleteCrest = memo(function AthleteCrest({ model, active: supplied
   }, [active, loaded, failed]);
   return <View style={{ minHeight: height, backgroundColor: transparent ? "transparent" : colors.paper }}>
     {!failed && createElement("iframe", { ref: frame, title: `${model.name} athlete card`, ...source, onError: () => { setLoaded(false); setFailed(true); }, style: { width: "100%", height, border: 0, opacity: loaded ? 1 : 0 } })}
-    {!bundled && !loaded && <View style={{ position: "absolute", inset: 0 }}>
-      <AthleteProfileCard name={model.name} location={model.location} avatarUrl={model.avatarUrl} score={model.score} rank={model.rank} />
+    {!loaded && !failed && <View style={{ position: "absolute", inset: 0, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="small" color={colors.muted} />
     </View>}
-    {bundled && failed && <View style={{ position: "absolute", inset: 0, justifyContent: "center", alignItems: "center" }}>
+    {failed && <View style={{ position: "absolute", inset: 0, justifyContent: "center", alignItems: "center" }}>
       <AppText role="body" secondary accessibilityRole="alert">Could not load your athlete card.</AppText>
     </View>}
   </View>;
