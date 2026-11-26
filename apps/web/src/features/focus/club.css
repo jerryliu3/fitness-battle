@@ -1374,9 +1374,6 @@
 .club-text-tabs button { min-height: 48px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); letter-spacing: normal; text-transform: none; font: var(--type-label); }
 .club-text-tabs button[aria-pressed="true"] { border-bottom-color: var(--ink); color: var(--ink); }
 .club-header-effort { flex: 1; max-width: 280px; min-width: 0; }
-.effort-rail.effort-rail-compact { border: 0; padding: 0; margin: 0; width: 100%; background: transparent; min-height: 44px; align-content: center; }
-.effort-rail-compact .effort-rail-top > span, .effort-rail-compact .effort-rail-caption > span { display: none; }
-.effort-rail-compact .effort-rail-top { justify-content: flex-start; }
 .club-week-detail { display: grid; gap: 20px; width: 100%; max-width: 880px; margin-inline: auto; }
 .club-week-detail .effort-rail { width: 100%; box-sizing: border-box; }
 .club-detail-heading { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; min-height: 52px; }
@@ -1441,7 +1438,6 @@
 .club-header-effort { max-width: 190px; }
 .effort-rail-track { position: relative; height: 24px; overflow: hidden; }
 .effort-rail-track > .effort-rail-remaining { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 8px; color: var(--ink); background: transparent; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
-.effort-rail-compact .effort-rail-caption { display: none; }
 .club-week-streak { display: inline-flex; align-items: center; gap: 3px; color: var(--app-podium-gold); letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .club-week-streak b { color: var(--ink); }
 .club-week-streak svg { opacity: .4; }
