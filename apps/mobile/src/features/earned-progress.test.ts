@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { freshState, reduceCompete, readAccountEffort, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { freshState, reduceCompete, readAccountEffort, startAccountEffort, type Activity, type CompeteState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({state:null as CompeteState|null,account:"one",navigate:vi.fn()}));
 vi.mock("react-native",()=>({useColorScheme: () => "light",
  useWindowDimensions:()=>({width:390,height:844,fontScale:1}),
@@ -19,6 +19,10 @@ vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
 vi.mock("../ui/sport-icon",()=>({SportIcon:"SportIcon"}));
 vi.mock("../ui/activity-route",()=>({ActivityRoute:()=>null}));
 vi.mock("../lib/haptics",()=>({playCue:vi.fn()}));
+vi.mock("../ui/anchored-menu",()=>({
+  AnchoredMenu:({open,children}:{open:boolean;children:unknown})=>open?createElement("View",{testID:"boost-popup"},children as never):null,
+  useAnchoredMenu:()=>{const [open,setOpen]=require("react").useState(false);return{open,close:()=>setOpen(false),toggle:()=>setOpen((v:boolean)=>!v),anchorRef:{current:null},menuLayout:{x:0,y:0,width:180}};},
+}));
 vi.mock("../lib/env", () => ({ mobileEnv: { previewEffortBoost: false } }));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
@@ -42,6 +46,14 @@ describe("native earned progress flows",()=>{
   expect(text()).toContain(`+${gain}`);expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
   mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(renderer.root.findAllByType("Text" as never).some(n=>n.children.join("")===`+${gain}`)).toBe(false);
   await act(async()=>renderer.root.findByType("Pressable" as never).props.onPress());expect(mock.navigate).toHaveBeenCalledWith("/you?view=effort");
+ });
+ it("keeps the compact multiplier pill independently clickable from the Progress tap target",async()=>{
+  mock.state=startAccountEffort(mock.state!,{multiplier:3,startsAt:"2026-10-21T09:00:00Z",boostEndsAt:"2026-11-18T00:00:00Z"});
+  await act(async()=>{renderer=create(createElement(EffortRail,{compact:true}));});
+  const boostBtn=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="3× Effort Boost")!;
+  await act(async()=>boostBtn.props.onPress());
+  expect(mock.navigate).not.toHaveBeenCalled();
+  expect(JSON.stringify(renderer.toJSON())).toContain("Effort Boost");
  });
  it("lets a multi-session day select a session and requires confirmation before removal",async()=>{
   const remove=vi.fn();await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[recorded("run",3600),recorded("strength",1800,"strength")],onRemove:remove}));});
