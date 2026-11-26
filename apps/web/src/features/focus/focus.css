@@ -2797,8 +2797,7 @@
   border-radius: 6px;
   background: var(--lime);
   color: var(--app-text-on-action);
-  font: var(--type-caption);
-  font-weight: 800;
+  font: var(--type-label);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   cursor: pointer;
