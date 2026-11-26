@@ -55,9 +55,9 @@ export interface EffortState {
   scoringVersion: string;
   starterProgress?: number;
   baselineWeeklyVolume: number | null;
-  /** Highest actual settled EWMA baseline (NOT self-reported declaration). */
+  /** Highest observed settled EWMA baseline. */
   peakObservedBaselineWeeklyVolume: number;
-  /** 0-7; declaration seeds one sample. */
+  /** Number of observed weekly samples, capped at seven. */
   calibrationSamples: number;
   /** Accumulated accepted training / reference weekly volume. */
   cumulativeNormalizedVolume: number;
@@ -149,15 +149,6 @@ export function effortBoostMultiplier(coveredHistoryDays: number): number {
 /** Omitted on legacy states so established scores retain their original curve. */
 export function createStarterEffortState(): EffortState {
   return { ...createEmptyEffortState(), starterProgress: 0 };
-}
-
-/** A declaration is one provisional observation, capped at Master entry volume. */
-export function createDeclaredEffortState(sport: Sport, declaredWeeklyVolume: number): EffortState {
-  nonnegative(declaredWeeklyVolume, 'declaredWeeklyVolume');
-  const baselineWeeklyVolume = Math.min(declaredWeeklyVolume, SPORT_CONFIG[sport].anchors[6]);
-  const s = { ...createEmptyEffortState(), baselineWeeklyVolume, calibrationSamples: 1 };
-  // Do not treat self-reported volume as a verified personal best.
-  return { ...s, officialRankIndex: getScoreBreakdown(sport, s).scoreBasedRankIndex };
 }
 
 export function getScoreBreakdown(sport: Sport, state: EffortState): ScoreBreakdown {

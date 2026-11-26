@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestIntroForAccount, parseGuestIntroDraft, parseOnboardingWeeklyVolumes, onboardingWeeklyVolumeInput, onboardingDeclaredVolume, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS, fitOnboardingCanvas, onboardingGrowthScore, onboardingCrewReplay } from "./onboarding-journey";
+import { guestIntroForAccount, parseGuestIntroDraft, ONBOARDING_GROWTH, ONBOARDING_STEPS, ONBOARDING_FEATURES, hasCompletedOnboardingIntro, onboardingCrewPreview, ONBOARDING_VITALS_METRICS, fitOnboardingCanvas, onboardingGrowthScore, onboardingCrewReplay } from "./onboarding-journey";
 
 const draft = { sport: "walking", name: "Taylor", city: "Boston", countryCode: "US" };
 describe("guest profile handoff", () => {
@@ -20,21 +20,7 @@ describe("guest profile handoff", () => {
   });
 });
 
-describe("weekly volume integration", () => {
-  it("restores only supported string declarations", () => {
-    expect(parseOnboardingWeeklyVolumes({ running: "7", walking: 28000, swimming: "10" })).toEqual({ running: "7" });
-    expect(parseOnboardingWeeklyVolumes(null)).toEqual({});
-    expect(parseOnboardingWeeklyVolumes({ running: "28000", walking: "9999" })).toEqual({ running: "1000", walking: "1000" });
-  });
-  it.each([
-    ["running", "7", "us", 11265.408], ["cycling", "40", "metric", 40000],
-    ["walking", "28000", "us", 1000], ["strength", "120", "metric", 7200],
-    ["running", "0", "us", 0], ["running", "", "us", undefined],
-    ["strength", " ", "us", undefined], ["walking", "-1", "metric", undefined],
-    ["running", "invalid", "us", undefined], ["running", "1e308", "us", 1609344],
-  ] as const)("converts %s %s %s to native volume", (sport, value, units, native) => {
-    expect(onboardingDeclaredVolume(sport, value, units)).toBe(native);
-  });
+describe("onboarding growth", () => {
   it("uses a clearly illustrative growth scale without rank promises", () => {
     expect(ONBOARDING_GROWTH.scores[0]).toBe(500);
     expect(ONBOARDING_GROWTH.scores.at(-1)).toBe(2000);
@@ -92,21 +78,4 @@ it.each(["running", "cycling", "walking", "strength"] as const)("shows a sport-s
   const expected = { running: "18/30 km", cycling: "54/90 km", walking: "12,000/20,000 steps", strength: "3/5 hrs" };
   expect(onboardingCrewGoal(guest, 1)).toBe(`Weekly goal: ${expected[sport]}`);
   expect(onboardingCrewGoal(guest, 0)).toMatch(/^Weekly goal: 0\//);
-});
-it("uses actual synced workouts, not a connected tracker or generated activity, to skip volume questions", async () => {
-  const { hasOnboardingTrainingHistory } = await import("./onboarding-journey");
-  const activity = { id: "workout", sport: "running" as const, startedAt: "2026-11-16T12:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, source: "apple_health" as const };
-  expect(hasOnboardingTrainingHistory({ activities: [] }, "running")).toBe(false);
-  expect(hasOnboardingTrainingHistory({ activities: [activity] }, "running")).toBe(true);
-  expect(hasOnboardingTrainingHistory({ activities: [activity] }, "cycling")).toBe(false);
-  for (const override of [{ source: "history" as const }, { provenance: "demo" as const }, { disposition: "pending" as const }, { disposition: "excluded" as const }, { journalOnly: true }]) {
-    expect(hasOnboardingTrainingHistory({ activities: [{ ...activity, ...override }] }, "running")).toBe(false);
-  }
-});
-
-it("caps editable volume without breaking empty or fractional entry", () => {
-  expect(onboardingWeeklyVolumeInput("1200")).toBe("1000");
-  expect(onboardingWeeklyVolumeInput("12.5")).toBe("12.5");
-  expect(onboardingWeeklyVolumeInput("")).toBe("");
-  expect(onboardingWeeklyVolumeInput("-1")).toBe("0");
 });

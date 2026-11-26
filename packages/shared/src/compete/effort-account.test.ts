@@ -1,5 +1,5 @@
 import { expect,it } from 'vitest';
-import { freshState,settleCompetition,reduceCompete } from './engine';
+import { freshState,settleCompetition } from './engine';
 import { initializeEffortAccounts,settleAccountEffort,readAccountEffort,replayEffortHistory } from './effort-account';
 import type { Activity } from './sports';
 const activity:Activity={id:'strava-real',sport:'running',startedAt:'2026-11-16T14:00:00Z',distanceM:16093.44,movingSec:3600,avgHr:null,verified:true,source:'strava',provenance:'recorded',disposition:'counted'};
@@ -20,14 +20,6 @@ it('does not apply milestone awards in the new scoring model',()=>{
  const next=settleCompetition({...state,activities:[activity]},new Date('2026-11-16T20:00:00Z'));
  expect(next.effortMilestones??[]).toEqual([]);
  expect(next.ratings.find(r=>r.sport==='running')!.openElo).toBe(0);
-});
-it('declaration is capped once and cannot overwrite recorded history or an onboarded account',()=>{
- const now=new Date('2026-11-16T12:00:00Z');const state=initializeEffortAccounts(freshState(now),now);
- const declared=reduceCompete(state,{type:'declare-effort',sport:'running',declaredWeeklyVolume:999999,now:now.toISOString()});
- expect(declared.effortAccounts!.running!.state.officialRankIndex).toBe(6);
- expect(declared.effortAccounts!.running!.state.peakObservedBaselineWeeklyVolume).toBe(0);
- const complete=reduceCompete(declared,{type:'complete-onboarding',now:now.toISOString()});
- expect(reduceCompete(complete,{type:'declare-effort',sport:'running',declaredWeeklyVolume:0,now:now.toISOString()}).effortAccounts).toEqual(complete.effortAccounts);
 });
 it('6 and 12 month histories recover through the verified peak, rather than Master+ new-high smoothing',()=>{
  for(const months of [6,12]){

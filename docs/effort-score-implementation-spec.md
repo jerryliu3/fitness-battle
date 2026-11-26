@@ -43,7 +43,7 @@ For user, sport, and a completed Monday–Sunday scoring week, define:
 
 - `V` = sum of eligible recorded volume for that week, in the sport's native units.
 - `B` = previously finalized weekly-volume baseline (nullable for a brand-new user).
-- `M` = highest **observed/finalized** prior baseline (exclude unsupported declaration).
+- `M` = highest **observed/finalized** prior baseline.
 - `n` = number of previous calibration observations, capped at 7.
 - `Q` = accumulated accepted historical volume divided by the sport's reference volume.
 - `C` = previous fading competition contribution **in displayed score points**.
@@ -90,7 +90,7 @@ Qnew = Q + V / referenceVolume[sport]
 historyPoints = 1000 * (1 - exp(-Qnew / 208))
 ```
 
-Use `1000 * -Math.expm1(-Qnew / 208)` for numerical stability. The contribution starts at zero and approaches **+1,000 points** as accepted training accumulates, with diminishing returns. It is never deducted for inactivity, except correction of previously invalid credited volume. Self-declaration never grants historical volume credit. Examples at **20 running miles/week**: roughly **+221 after 1 year**, **+393 after 2 years**, **+713 after 5 years**, **+918 after 10 years**.
+Use `1000 * -Math.expm1(-Qnew / 208)` for numerical stability. The contribution starts at zero and approaches **+1,000 points** as accepted training accumulates, with diminishing returns. It is never deducted for inactivity, except correction of previously invalid credited volume. Examples at **20 running miles/week**: roughly **+221 after 1 year**, **+393 after 2 years**, **+713 after 5 years**, **+918 after 10 years**.
 
 ### 3.4 Competition contribution (gamification, not true Elo)
 
@@ -128,8 +128,7 @@ scoreRankIndex = min(8, floor(settledScore / 1250))
 ## 4. Onboarding and history
 
 - **Verified import:** Replay actual complete eligible weekly totals chronologically through the same scoring functions; imported eligible historical volume contributes to `Q`. Do not infer invented weeks of effort. Include actual recorded zero weeks as zeros. Set the resulting official badge from the established score when import calibration completes.
-- **Self-declared weekly amount:** Initialize `B = min(declaredVolume, MasterVolumeAnchor[sport])`, `n=1`, `M=0`, `Q=0`, `C=0`. Set a provisional starting badge from that capped estimate. The declaration counts as **one prior observation**, not verified peak history.
-- **No import/declaration:** `B=null`, `n=0`, initial score/badge = **0 / Beginner**. First completed observed week initializes `B` directly from that week's actual volume.
+- **No import:** `B=null`, `n=0`, initial score/badge = **0 / Beginner**. First completed observed week initializes `B` directly from that week's actual volume.
 - No lower starting score is forced on all users. Fast provisional recalibration supersedes the normal established upward/downward/recovery branch until `n=7`.
 
 ## 5. Live intraweek score: positive immediately, negative next day
@@ -237,7 +236,7 @@ Fitness Battle is a **pnpm monorepo**: `apps/mobile` (Expo Router), `apps/web` (
 
 1. Inspect existing shared scoring, activity ingestion, period, rank, recap, and persistence paths. Reuse existing primitives; do not create parallel scoring systems.
 2. Implement a **pure, platform-agnostic** scorer in `@fitness-battle/shared` for sport benchmark conversion, baseline update, history bonus, placement reward, `settleEffortWeek`, and `calculateLiveEffortScore`. Adopt the **latest 1/20 downward rule**; an earlier v2.2 source draft used `1/13` and is obsolete on this point.
-3. Add/reuse the per-user-per-sport state and an idempotent weekly settlement path. Maintain `peakObservedBaselineWeeklyVolume` only from actual settled observations, not self-declaration.
+3. Add/reuse the per-user-per-sport state and an idempotent weekly settlement path. Maintain `peakObservedBaselineWeeklyVolume` only from actual settled observations.
 4. Expose a server-derived live preview using week-start state and canonical activity volume split at today's **Eastern-local midnight**. Refresh on screen load, date rollover, and successful activity sync. Avoid changing official state until weekly recap.
 5. Update the web/mobile score UI: animate positive live gains, allow deferred drops on the next day, keep the badge fixed until recap, label the number as provisional where appropriate, and show the weekly final score/delta on recap.
 6. Add tests, run representative activity replay, and remove obsolete milestone/Elo score-write paths to prevent double awards. Respect the repo's existing additive migration, RLS, and shared-package conventions.
@@ -246,7 +245,7 @@ Fitness Battle is a **pnpm monorepo**: `apps/mobile` (Expo Router), `apps/web` (
 
 **Core:** All 9 score thresholds; sport native-unit conversion; interpolation/extrapolation; history bonus `0..1000`; full 8-player rewards and ties; small field/all-tie neutral; week idempotency; no double credits; weekly badge promotion and two-week demotion protection.
 
-**Calibration:** No-history initial 0; self-declaration capped at Master and treated as 1 observation; imported observed history; provisional rates; decline exactly `1/20` when established; `1/7` ordinary increase; `1/60` new Master+ high; `1/3` verified recovery capped at old peak.
+**Calibration:** No-history initial 0; imported observed history; provisional rates; decline exactly `1/20` when established; `1/7` ordinary increase; `1/60` new Master+ high; `1/3` verified recovery capped at old peak.
 
 **Live:** No-workout Monday shows no drop before midnight; below-budget workout gives `+0`; above-budget workouts show only net gain; multiple same-day syncs are monotone and order-independent; tomorrow exposes today's uncovered deficit; Sunday preview uses actual total, not projected future training; the next settlement matches the actual weekly core calculation (apart from the explicit new competition contribution); DST boundaries; duplicates/late activities/corrections; no daily DB write; no provisional badge changes.
 

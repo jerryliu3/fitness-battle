@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activityBaseTrainingXp, activityTrainingXp, eligibleTrainingXp, formatTrainingXp, trainingXpInPeriod } from './training-xp';
 import { walkingStepsInPeriod } from './journal';
 import { activityCompetitionVolume, workoutSizeSummary } from './effort';
-import { calculateLiveEffortScore, createDeclaredEffortState, getScoreBreakdown, historicalBonusPoints, settleEffortWeek, SPORT_CONFIG, trainingXpForVolume, updateEffortBaseline } from './effort-score';
+import { calculateLiveEffortScore, createEmptyEffortState, getScoreBreakdown, historicalBonusPoints, settleEffortWeek, SPORT_CONFIG, trainingXpForVolume, updateEffortBaseline } from './effort-score';
 import { type Activity, SPORT_IDS } from './sports';
 const start = new Date('2026-11-16T05:00:00Z'), end = new Date('2026-11-23T05:00:00Z');
 const run: Activity = { id:'run', sport:'running', startedAt:'2026-11-17T12:00:00Z', distanceM:1609.344, movingSec:600, avgHr:140, source:'strava', verified:true, provenance:'recorded', disposition:'counted' };
@@ -94,7 +94,7 @@ describe('Training XP', () => {
  });
  it('leaves weekly baseline, lifetime credit, rank, recovery and competition math unchanged', () => {
   for(const sport of SPORT_IDS){
-   let state=createDeclaredEffortState(sport,SPORT_CONFIG[sport].anchors[5]!);
+   let state=createEmptyEffortState();
    for(let week=0;week<30;week++){
     const volume=SPORT_CONFIG[sport].referenceVolume*[0,0.1,1,3,5,0.3][week%6]!;
     const baseline=updateEffortBaseline(sport,state,volume);
@@ -110,7 +110,7 @@ describe('Training XP', () => {
   }
  });
  it('keeps live projections on the original volume curve and competition on native units', () => {
-  const state=createDeclaredEffortState('running',SPORT_CONFIG.running.referenceVolume);
+  const state={ ...createEmptyEffortState(), baselineWeeklyVolume: SPORT_CONFIG.running.referenceVolume };
   const now=new Date('2026-11-17T12:00:00Z');
   const result=calculateLiveEffortScore('running',state,{now,trainingXpBeforeToday:100,trainingXpToday:50});
   expect(result.activityProjectedVolume).toBeCloseTo(SPORT_CONFIG.running.referenceVolume*(.15+5/7));

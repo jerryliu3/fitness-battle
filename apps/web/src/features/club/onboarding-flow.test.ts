@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", storage); vi.stubGlobal("sessionStorage", storage);
 });
 const next = (r: ReactTestRenderer) => act(async () => r.root.findByType("button").props.onClick());
-it.each([false, true])("uses one event with weekly volume on the starting line and immediate confirmation (preview=%s)", async preview => {
+it.each([false, true])("uses one event without a training declaration and immediate confirmation (preview=%s)", async preview => {
   if (preview) mock.params = new URLSearchParams("preview=1");
   else {
     mock.storage.set(GUEST_INTRO_DRAFT_KEY, JSON.stringify({ sport: "walking", name: "Taylor", introCompleted: true }));
@@ -48,14 +48,13 @@ it.each([false, true])("uses one event with weekly volume on the starting line a
   expect(r.root.findAllByType("TrackerConnections" as never)).toHaveLength(preview ? 0 : 1);
   await next(r);
   const sport = preview ? "running" : "walking";
-  await act(async () => r.root.findByType("input").props.onChange({ target: { value: "800" } }));
+  expect(r.root.findAllByType("input")).toHaveLength(0);
   const ticket = r.root.findByType("EventRegistration" as never);
   expect(ticket.props).toMatchObject({ event: sport, registered: true, ticketOnly: true });
   expect(mock.dispatch.mock.calls.some(([a]) => a.type === "complete-onboarding")).toBe(false);
   await act(async () => ticket.props.onView());
   if (preview) { expect(mock.dispatch).not.toHaveBeenCalled(); expect(mock.storage.size).toBe(0); }
   else {
-    expect(mock.dispatch).toHaveBeenCalledWith({ type: "declare-effort", sport: "walking", declaredWeeklyVolume: 800 });
     expect(mock.dispatch.mock.calls.filter(([a]) => a.type === "opt-in")).toHaveLength(1);
     expect(mock.dispatch).toHaveBeenCalledWith({ type: "complete-onboarding" });
     expect(mock.storage.has(GUEST_INTRO_DRAFT_KEY)).toBe(false);

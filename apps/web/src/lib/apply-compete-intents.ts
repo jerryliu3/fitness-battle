@@ -18,6 +18,8 @@ export function applyAccountAction(
   userId: string,
   now: Date,
 ): CompeteState {
+  // Older mobile clients can send this alongside onboarding completion.
+  if ((raw.type as string) === "declare-effort") return stored;
   const nowIso = now.toISOString();
   const action = isCompeteSyncAction(raw)
     ? resolveServerSyncAction(stored, raw, userId, now)
