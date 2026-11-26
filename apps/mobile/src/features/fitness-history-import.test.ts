@@ -20,7 +20,7 @@ vi.mock("./sync-review", () => ({ SyncReview: "SyncReview" }));
 import { SyncReview } from "./sync-review";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { NumberPicker } from "../ui/form-picker";
-import { FitnessHistoryImport } from "./fitness-history-import";
+import { FitnessHistoryImport, HistoryImportPreview } from "./fitness-history-import";
 
 let renderer: ReactTestRenderer;
 const button = (label: string) => renderer.root.findAllByType(FocusButton).find(b => b.props.label === label)!;
@@ -141,4 +141,22 @@ it.each([false, true])("commits Strava history only on swipe (confirmed: %s)", a
     expect(button("Import fitness history").props.disabled).toBe(false);
   }
   expect(mock.dispatch).not.toHaveBeenCalled();
+});
+
+it("previews calibration and the reward without importing or saving workouts", async () => {
+  vi.useFakeTimers();
+  try {
+    await act(async () => { renderer = create(createElement(HistoryImportPreview)); });
+    await act(async () => button("Preview history import").props.onPress());
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("Calibrating your Effort Boost…");
+    await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+    expect(renderer.root.findByType(FocusSheet).props.title).toBe("You earned an Effort Boost");
+    expect(JSON.stringify(renderer.toJSON())).toContain("3×");
+    await act(async () => button("Continue").props.onPress());
+    expect(button("Preview history import")).toBeDefined();
+    expect(mock.request).not.toHaveBeenCalled();
+    expect(mock.dispatch).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
 });

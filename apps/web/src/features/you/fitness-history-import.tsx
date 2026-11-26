@@ -20,6 +20,46 @@ async function historyRequest<T>(path: string, options?: RequestInit): Promise<T
 
 type HistoryImportProps = { offer: ProviderId | null; onDismiss: () => void; showSettings?: boolean };
 
+type ImportConfirmation = { pending: true } | { pending: false; boost?: TimedMultiplier };
+
+function HistoryImportResult({ confirmation, onContinue }: {
+  confirmation: ImportConfirmation;
+  onContinue: () => void;
+}) {
+  const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
+  const title = confirmation.pending ? "Calibrating your Effort Boost…" : boost ? "You earned an Effort Boost" : "History imported";
+  const body = confirmation.pending ? "Saving your selected workouts." : boost
+    ? "Your training history earned you a 30-day head start across all sports. Eligible training advances your Effort progression faster."
+    : "Your selected workouts are ready to view.";
+  return <Sheet open fullScreen title={title} body={body} onClose={onContinue}>
+    <div className="history-import-reveal">
+      {boost && <strong className="history-import-reveal-value">{boost.label}</strong>}
+      {!confirmation.pending && <button type="button" className="fb-btn" onClick={onContinue}>Continue</button>}
+    </div>
+  </Sheet>;
+}
+
+export function HistoryImportPreview() {
+  const [confirmation, setConfirmation] = useState<ImportConfirmation | null>(null);
+  useEffect(() => {
+    if (!confirmation?.pending) return;
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      setConfirmation({ pending: false, boost: {
+        multiplier: 3,
+        startsAt: new Date(now).toISOString(),
+        boostEndsAt: new Date(now + 30 * 86_400_000).toISOString(),
+      } });
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [confirmation]);
+  return confirmation
+    ? <HistoryImportResult confirmation={confirmation} onContinue={() => {
+        if (!confirmation.pending) setConfirmation(null);
+      }} />
+    : <button type="button" className="fb-btn-line" onClick={() => setConfirmation({ pending: true })}>Preview history import</button>;
+}
+
 export function FitnessHistoryImport(props: HistoryImportProps) {
   const { user } = useAuth();
   return <AccountHistoryImport key={user?.id ?? "guest"} {...props} />;
@@ -32,7 +72,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
   const [provider, setProvider] = useState<ProviderId | null>(null);
   const [days, setDays] = useState(90);
   const [busy, setBusy] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ pending: true } | { pending: false; boost?: TimedMultiplier } | null>(null);
+  const [confirmation, setConfirmation] = useState<ImportConfirmation | null>(null);
   const [error, setError] = useState("");
   const [review, setReview] = useState<{ lease: string; provider: ProviderId; receipt: SyncReviewReceipt } | null>(null);
   const flight = useRef(false);
@@ -129,25 +169,11 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     }
   }
 
-  if (confirmation) {
-    const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
-    const title = confirmation.pending ? "Calibrating your Effort Boost…" : boost ? "You earned an Effort Boost" : "History imported";
-    const body = confirmation.pending ? "Saving your selected workouts." : boost
-      ? "Your training history earned you a 30-day head start across all sports. Eligible training advances your Effort progression faster."
-      : "Your selected workouts are ready to view.";
-    const closeConfirmation = () => {
-      if (confirmation.pending) return;
-      setConfirmation(null);
-      dismiss.current();
-    };
-    return <Sheet open fullScreen title={title} body={body} onClose={closeConfirmation}>
-      <div className="history-import-reveal">
-        {boost && <strong className="history-import-reveal-value">{boost.label}</strong>}
-        {!confirmation.pending && <button type="button" className="fb-btn" onClick={closeConfirmation}>Continue</button>}
-      </div>
-    </Sheet>;
-  }
-
+  if (confirmation) return <HistoryImportResult confirmation={confirmation} onContinue={() => {
+    if (confirmation.pending) return;
+    setConfirmation(null);
+    dismiss.current();
+  }} />;
   if (review && state) return <SyncReview receipt={review.receipt} state={state} onComplete={finishReview} />;
 
   return <>

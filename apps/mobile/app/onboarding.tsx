@@ -10,6 +10,7 @@ import {
   type ProfileGender, type SportId, type UnitSystem,
   onboardingWeeklyVolumeInput, parseOnboardingWeeklyVolumes, onboardingDeclaredVolume, onboardingWeeklyVolumeUnit, type OnboardingWeeklyVolumes,
 } from "@fitness-battle/shared";
+import { HistoryImportPreview } from "../src/features/fitness-history-import";
 import { TrackerConnections } from "./athlete";
 import { GUEST_INTRO_DRAFT_KEY, GUEST_SIGNUP_PENDING_KEY, readGuestIntroDraft } from "../src/lib/guest-intro";
 import { TimezonePicker } from "../src/ui/timezone-picker";
@@ -176,6 +177,7 @@ export default function Onboarding() {
           {step === 1 && <>
             <AppText secondary>Sync your tracker to bring up to 90 days of workouts. You can also connect later.</AppText>
             <TrackerConnections preview={preview} />
+            {preview && __DEV__ && <HistoryImportPreview />}
           </>}
           {step === 2 && <>
             <AppText secondary>Your chosen event registers for the next wave. You can register for more events in the app.</AppText>
