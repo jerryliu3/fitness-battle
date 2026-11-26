@@ -177,3 +177,25 @@ removes the retired milestone receipt requirement from account saves while
 retaining historical receipts and the existing account revision, wave and
 server-authority checks. Without it, legacy receipt holders can receive
 `account_not_saved` during GET settlement and account writes.
+
+### Existing-athlete Effort backfill
+
+Apply the three Effort import and backfill migrations before running the script.
+Use Node 22 and run from `apps/web`. Supply the target
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY` in the shell or a private environment file. Review
+the printed project host, proposed scores, and counts before applying.
+
+```sh
+# Set CUTOVER to the chosen Eastern Monday, expressed as an ISO timestamp.
+node --env-file=/path/to/target.env scripts/backfill-effort.mjs --start "$CUTOVER"
+node --env-file=/path/to/target.env scripts/backfill-effort.mjs --start "$CUTOVER" --apply
+```
+
+The dry run does not write. Apply accepts only the current Eastern Monday as the
+cutover, and only targets real accounts created before then. The preceding 90 days
+of eligible recorded training determine the boost and starting credit. A fresh
+import confirmed on or after cutover takes precedence. The transaction preserves
+locked entry ratings and completed results, and the existing score history
+trigger records rating changes. If a save conflicts, rerun with the same
+cutover during the same week. Committed accounts are skipped on subsequent runs.

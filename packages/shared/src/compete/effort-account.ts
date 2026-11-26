@@ -42,19 +42,21 @@ export type EffortAccounts = Partial<Record<SportId, SportEffortAccount>>;
 const dateFor = (day:string)=>new Date(`${day}T12:00:00Z`);
 
 /** Canonical reset transform. Call with an Eastern Monday boundary and verified coverage. */
-export function resetAccountEffort(state: CompeteState, startsAt: Date, coveredHistoryDays: number): CompeteState {
+export function resetAccountEffort(state: CompeteState, startsAt: Date, coveredHistoryDays: number, weeklyVolumes?: HistoryEffortAward["weeklyVolumes"]): CompeteState {
   if (weeklyPeriodBounds(startsAt).startsAt.getTime() !== startsAt.getTime()) throw new Error('effort_reset_requires_week_boundary');
   if (state.effortAccounts?.[state.primary]?.starter?.startsAt === startsAt.toISOString()) return state;
   return startAccountEffort({ ...state, effortAccounts: undefined }, {
     startsAt: startsAt.toISOString(),
     boostEndsAt: shiftAppDay(startsAt, EFFORT_BOOST_DAYS).toISOString(),
     multiplier: effortBoostMultiplier(coveredHistoryDays),
+    primarySport: state.primary, coveredHistoryDays, weeklyVolumes,
   });
 }
 
 export function startAccountEffort(state: CompeteState, award: HistoryEffortAward): CompeteState {
   const existingAward = state.effortAccounts?.[state.primary]?.starter;
-  if (existingAward?.startsAt === award.startsAt && existingAward.multiplier === award.multiplier) return state;
+  if (existingAward && (Date.parse(existingAward.startsAt) > Date.parse(award.startsAt) ||
+    (existingAward.startsAt === award.startsAt && existingAward.multiplier === award.multiplier))) return state;
   const week = weeklyPeriodBounds(new Date(award.startsAt)).startsAt;
   const starter = { startsAt: award.startsAt, boostEndsAt: award.boostEndsAt, multiplier: award.multiplier };
   const effortAccounts: EffortAccounts = {};

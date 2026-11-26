@@ -1,6 +1,6 @@
 import { expect,it } from 'vitest';
 import { freshState,settleCompetition, reduceCompete } from './engine';
-import { initializeEffortAccounts,settleAccountEffort,readAccountEffort,replayEffortHistory, historyEffortCredit, startAccountEffort, type HistoryEffortAward } from './effort-account';
+import { initializeEffortAccounts,settleAccountEffort,readAccountEffort,replayEffortHistory, resetAccountEffort, historyEffortCredit, startAccountEffort, type HistoryEffortAward } from './effort-account';
 import type { Activity } from './sports';
 const activity:Activity={id:'strava-real',sport:'running',startedAt:'2026-11-16T14:00:00Z',distanceM:16093.44,movingSec:3600,avgHr:null,verified:true,source:'strava',provenance:'recorded',disposition:'counted'};
 it('uses calendar volume even without an enrollment and persists an idempotent frozen baseline',()=>{
@@ -82,4 +82,15 @@ it('starts at zero without history and preserves higher earned progress during a
   expect(imported.ratings.find(r => r.sport === 'running')?.openElo)
     .toBe(earned.ratings.find(r => r.sport === 'running')?.openElo);
   expect(imported.effortAccounts?.running?.starter?.multiplier).toBe(3);
+});
+
+it('resets an older import at cutover and ignores that award on future account loads', () => {
+  const original = startAccountEffort(freshState(new Date(importAward.startsAt)), importAward);
+  const cutover = new Date('2026-11-23T05:00:00Z');
+  const reset = resetAccountEffort(original, cutover, 45, importAward.weeklyVolumes);
+  expect(reset.effortAccounts?.running?.starter?.multiplier).toBe(2);
+  expect(reset.ratings.find(row => row.sport === 'running')?.openElo).toBe(125);
+  expect(startAccountEffort(reset, importAward)).toBe(reset);
+  expect(resetAccountEffort(reset, cutover, 45, importAward.weeklyVolumes)).toBe(reset);
+  expect(reset.periodResults).toBe(original.periodResults);
 });
