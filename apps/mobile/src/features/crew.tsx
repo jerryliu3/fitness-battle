@@ -16,7 +16,6 @@ import {
   competeNow,
   countsOnTrack,
   formatCrewRelayVolume,
-  formatNoticeUnits,
   rankSymbolForScore,
   resolveCrewWeekMetric,
   weeklyPeriodBounds,
@@ -635,11 +634,6 @@ const f=useFocusStyles();
           {note || api.error}
         </AppText>
       ) : null}
-      {!hiddenIds.length && api.data?.notices?.map((n) => (
-        <AppText role="caption" secondary  key={n.id}>
-          {formatNoticeUnits(n.body, state?.units)}
-        </AppText>
-      ))}
       {!user && !inviteCode ? (
         <>
           <View style={f.section}>
