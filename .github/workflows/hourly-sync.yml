@@ -9,7 +9,76 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger background fitness sync
+      - name: Determine execution mode
+        id: mode
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          OURA_CLIENT_SECRET: ${{ secrets.OURA_CLIENT_SECRET }}
+          WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+        run: |
+          missing=()
+          for key in \
+            NEXT_PUBLIC_SUPABASE_URL \
+            NEXT_PUBLIC_SUPABASE_ANON_KEY \
+            SUPABASE_SERVICE_ROLE_KEY \
+            STRAVA_CLIENT_SECRET \
+            OURA_CLIENT_SECRET \
+            WHOOP_CLIENT_SECRET \
+            EXPO_ACCESS_TOKEN; do
+            eval "val=\${$key:-}"
+            if [ -z "$val" ] || [ "$val" = "[SENSITIVE]" ]; then
+              missing+=("$key")
+            fi
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "direct=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Missing GitHub secrets (${missing[*]}). Falling back to Vercel /api/fitness/cron/sync."
+            echo "direct=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fallback to Vercel cron endpoint
+        if: steps.mode.outputs.direct != 'true'
         run: |
           curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://fitness-battle-one.vercel.app/api/fitness/cron/sync"
+
+      - name: Checkout repository
+        if: steps.mode.outputs.direct == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: steps.mode.outputs.direct == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        if: steps.mode.outputs.direct == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install web dependencies
+        if: steps.mode.outputs.direct == 'true'
+        run: pnpm install --frozen-lockfile --filter @fitness-battle/web...
+
+      - name: Run background fitness sync & daily digests directly
+        if: steps.mode.outputs.direct == 'true'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          OURA_CLIENT_ID: ${{ secrets.OURA_CLIENT_ID }}
+          OURA_CLIENT_SECRET: ${{ secrets.OURA_CLIENT_SECRET }}
+          WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
+          WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+        run: node --experimental-strip-types apps/web/scripts/run-background-sync.mjs
