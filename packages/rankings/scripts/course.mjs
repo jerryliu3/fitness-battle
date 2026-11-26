@@ -24,6 +24,14 @@ function flag(name, list) {
 
 const argv = process.argv.slice(2);
 const slug = flag("--slug", argv);
+const editionIdRaw = flag("--edition-id", argv);
+const eventEditionId =
+  editionIdRaw != null && editionIdRaw !== ""
+    ? Number.parseInt(editionIdRaw, 10)
+    : undefined;
+if (editionIdRaw != null && editionIdRaw !== "" && !Number.isFinite(eventEditionId)) {
+  throw new Error(`Invalid --edition-id: ${editionIdRaw}`);
+}
 const displayAllowed = argv.includes("--display-allowed");
 const importDir = flag("--output-dir", argv) || join(packageRoot, "imports");
 const USER_AGENT =
@@ -70,6 +78,7 @@ const sql = replayCourseImportSql({
   reviewNotes,
   displayAllowed,
   reviewedAt: new Date().toISOString(),
+  eventEditionId,
 });
 
 await mkdir(importDir, { recursive: true });
