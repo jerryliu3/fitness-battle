@@ -1,7 +1,8 @@
 import { fetchWithTimeout } from "./fetch-with-timeout";
 import { apiReadScope, cachedApiRead, invalidateApiReads } from "./api-read-cache";
+import { reportNetworkFailure, reportNetworkSuccess } from "./network";
 class ApiRequestError extends Error {
-  constructor(message: string, readonly code?: string) {
+  constructor(message: string, readonly code?: string, readonly status?: number) {
     super(message);
   }
 }
@@ -19,26 +20,34 @@ export async function requestApi<T = Record<string, unknown>>(
   if (method === "GET" && options.cacheMs !== undefined)
     return cachedApiRead(scope, path, options.cacheMs, () =>
       requestApi<T>(apiUrl, token, path, { ...options, cacheMs: undefined }));
-  const response = await fetchWithTimeout(
-    `${apiUrl.replace(/\/$/, "")}${path}`,
-    {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(
+      `${apiUrl.replace(/\/$/, "")}${path}`,
+      {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(options.body === undefined
+            ? {}
+            : { "Content-Type": "application/json" }),
+        },
         ...(options.body === undefined
           ? {}
-          : { "Content-Type": "application/json" }),
+          : { body: JSON.stringify(options.body) }),
       },
-      ...(options.body === undefined
-        ? {}
-        : { body: JSON.stringify(options.body) }),
-    },
-  );
+    );
+    reportNetworkSuccess();
+  } catch (error) {
+    reportNetworkFailure(error);
+    throw error;
+  }
   const body = await response.json().catch(() => null);
   if (!response.ok || (body?.persisted === false && !options.allowUnpersisted))
     throw new ApiRequestError(
       body?.message ?? body?.error ?? "Could not reach Overtaek. Please try again.",
       body?.error,
+      response.status,
     );
   if (!body)
     throw new Error("Received an incomplete response. Please try again.");

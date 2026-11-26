@@ -46,6 +46,7 @@ import { LaunchGate } from "../src/ui/launch-gate";
 import { useReducedMotion } from "../src/ui/use-reduced-motion";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
 import { applyExpoUpdateOnLaunch } from "../src/lib/expo-ota";
+import { OfflineNotice } from "../src/ui/offline-notice";
 
 function BlockPrivacyGate({ children }: { children: ReactNode }) {
 const SHELL_COLORS=useThemeColors();
@@ -216,6 +217,7 @@ const SHELL_COLORS=useThemeColors();
                           <NavigationWarmup />
                           <OnboardingNavigation />
                           <StatusBar style={mode === "dark" ? "light" : "dark"} />
+                          <OfflineNotice />
                           <Stack
                             screenOptions={{
                               headerShown: false,

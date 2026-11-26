@@ -65,6 +65,13 @@ import { useAuth } from "./auth";
 import { mobileEnv } from "./env";
 import { fetchWithTimeout } from "./fetch-with-timeout";
 import { canOpenCompeteNotice } from "./navigation";
+import {
+  getNetworkStatus,
+  isTransportError,
+  reportNetworkFailure,
+  reportNetworkSuccess,
+  subscribeNetworkReconnect,
+} from "./network";
 import { supabase } from "./supabase";
 import { clearApiReads, apiReadScope, invalidateApiReads } from "./api-read-cache";
 import type { CompeteLoadStatus } from "@fitness-battle/shared/boot";
@@ -79,8 +86,21 @@ const DIRTY_KEY = "fb-compete-dirty";
 
 export type AccountLoadStatus = CompeteLoadStatus;
 
+const LOCAL_OFFLINE_ACTIONS = new Set<Action["type"]>([
+  "log-manual",
+  "set-disposition",
+  "set-units",
+  "set-timezone",
+  "rename",
+  "set-city",
+  "set-gender",
+  "set-country",
+  "set-avatar",
+]);
+
 interface CompeteContextValue {
   canWrite: boolean;
+  canWriteLocal: boolean;
   loadStatus: AccountLoadStatus;
   state: CompeteState | null;
   accountKey: string;
@@ -184,6 +204,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   const savingRef = useRef(false);
   const [loadStatus, setLoadStatus] = useState<AccountLoadStatus>("loading");
   const loadReady = useRef(false);
+  const hasCacheRef = useRef(false);
   const hydrationPending = useRef(true);
   const markLoadReady = (ready: boolean) => {
     loadReady.current = ready;
@@ -291,6 +312,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         } catch { /* Optional local fixtures; ordinary offline state remains available. */ }
       }
       const dirty = hasCache && (await AsyncStorage.getItem(keys.dirty)) === "1";
+      hasCacheRef.current = hasCache;
       if (!hasCache) await AsyncStorage.removeItem(keys.dirty);
       const currentAuth = authRef.current;
       const live =
@@ -320,7 +342,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               headers: { Authorization: `Bearer ${account.token}` },
             },
           );
-          if (!response.ok) throw new Error("load_failed");
+          reportNetworkSuccess();
+          if (!response.ok) throw Object.assign(new Error("load_failed"), { status: response.status });
           const body = await response.json();
           if (!alive || accountRef.current !== owner) return;
           const cachedRevision = await AsyncStorage.getItem(
@@ -361,13 +384,16 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             remoteLoaded = true;
             setStandingsStale(false);
           }
-        } catch {
+        } catch (error) {
+          reportNetworkFailure(error);
           if (alive) {
             setLoadStatus("failed");
             setStandingsStale(true);
-            setSaveError(
-              "Your account could not load. Refresh your account before making changes.",
-            );
+            if (!(hasCache && isTransportError(error))) {
+              setSaveError(
+                "Your account could not load. Refresh your account before making changes.",
+              );
+            }
           }
         }
       }
@@ -544,6 +570,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               headers: { Authorization: `Bearer ${account.token}` },
             },
           );
+        reportNetworkSuccess();
         if (!response.ok) {
           setStandingsStale(true);
           return false;
@@ -624,7 +651,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         setStandingsStale(false);
         lastRefresh.current = Date.now();
         return true;
-      } catch {
+      } catch (error) {
+        reportNetworkFailure(error);
         if (account.userId !== accountRef.current) return false;
         setStandingsStale(true);
         return false;
@@ -756,9 +784,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           )
             return;
           if (!loadReady.current && !force) {
-            setSaveError(
-              "Your account could not load. Refresh before saving changes.",
-            );
+            if (!(hasCacheRef.current && getNetworkStatus() === "offline")) {
+              setSaveError(
+                "Your account could not load. Refresh before saving changes.",
+              );
+            }
             return;
           }
           savingRef.current = true;
@@ -897,13 +927,27 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       scheduleSave(stateRef.current);
   }, [loadStatus, scheduleSave]);
 
+  useEffect(() => {
+    if (!owner || auth.offlineMode) return;
+    return subscribeNetworkReconnect(() => {
+      if (loadStatus === "failed" || standingsStale || unsavedRef.current) {
+        void refreshRef.current();
+      }
+    });
+  }, [owner, auth.offlineMode, loadStatus, standingsStale]);
+
   const dispatch = useCallback(
     (action: Action) => {
       if (conflictRef.current) setNoticeAttempt(value => value + 1);
       const prev = stateRef.current;
       if (!prev) return;
+      const allowOfflineLocal =
+        !hydrationPending.current &&
+        hasCacheRef.current &&
+        LOCAL_OFFLINE_ACTIONS.has(action.type);
       if (
         !loadReady.current &&
+        !allowOfflineLocal &&
         authRef.current.user &&
         !authRef.current.offlineMode &&
         (action.type !== "set-avatar" || hydrationPending.current)
@@ -1154,6 +1198,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     <CompeteContext.Provider
       value={{
         canWrite: Boolean(state) && (loadStatus === "ready" || loadStatus === "local" || debugActive) && !auth.loading,
+        canWriteLocal: Boolean(state) && (loadStatus === "ready" || loadStatus === "local" || (loadStatus === "failed" && hasCacheRef.current) || debugActive) && !auth.loading,
         loadStatus,
         state,
         accountKey: accountRef.current ?? "device",

@@ -1,4 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: () => ({ remove() {} }) } }));
+vi.mock("./env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => {}),
+    removeItem: vi.fn(async () => {}),
+  },
+}));
 import { requestApi } from "./api";
 import { apiReadScope, clearApiReads, invalidateApiReads, peekApiRead, subscribeApiReads } from "./api-read-cache";
 

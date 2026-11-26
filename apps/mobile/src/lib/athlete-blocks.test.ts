@@ -1,7 +1,15 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ owner: "owner", rows: [] as { blocked_id: string; profiles: { display_name: string } }[], select: vi.fn(), insert: vi.fn(), remove: vi.fn(), failure: false, hanging: false, listener: null as null | ((state: string) => void) }));
+const mock = vi.hoisted(() => ({ owner: "owner", rows: [] as { blocked_id: string; profiles: { display_name: string } }[], storage: new Map<string, string>(), select: vi.fn(), insert: vi.fn(), remove: vi.fn(), failure: false, hanging: false, listener: null as null | ((state: string) => void) }));
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(async (key: string) => mock.storage.get(key) ?? null),
+    setItem: vi.fn(async (key: string, value: string) => { mock.storage.set(key, value); }),
+    removeItem: vi.fn(async (key: string) => { mock.storage.delete(key); }),
+  },
+}));
+vi.mock("./env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",  AppState: { currentState: "active", addEventListener: (_: string, listener: (state: string) => void) => { mock.listener = listener; return { remove() { mock.listener = null; } }; } } }));
 vi.mock("./auth", () => ({ useAuth: () => ({ user: { id: mock.owner }, offlineMode: false }) }));
 vi.mock("./supabase", () => ({ supabase: { from: () => ({
@@ -21,7 +29,7 @@ let observed: ReturnType<typeof useAthleteBlocks>;
 function Consumer() { observed = useAthleteBlocks(); return null; }
 let renderer: ReactTestRenderer;
 beforeEach(async () => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.clearAllMocks(); mock.owner = "owner"; mock.rows = []; mock.failure = false; mock.hanging = false;
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); vi.clearAllMocks(); mock.owner = "owner"; mock.rows = []; mock.storage.clear(); mock.failure = false; mock.hanging = false;
   mock.insert.mockResolvedValue({ error: null }); mock.remove.mockResolvedValue({ error: null });
   await act(async () => { renderer = create(createElement(AthleteBlocksProvider, null, createElement(Consumer))); });
 });
@@ -36,9 +44,14 @@ it("loads and persists directed blocks, then reloads them", async () => {
   expect(mock.remove).toHaveBeenCalledWith("blocked_id", "peer");
   expect(observed.blocks).toEqual([]);
 });
-it("fails closed when the block list cannot be loaded", async () => {
+it("fails closed when an uncached block list cannot be loaded, and keeps cached blocks ready offline", async () => {
   mock.failure = true;
   await act(async () => observed.reload());
+  expect(observed.ready).toBe(true);
+  expect(observed.error).toBe("");
+
+  mock.owner = "uncached";
+  await act(async () => renderer.update(createElement(AthleteBlocksProvider, null, createElement(Consumer))));
   expect(observed.ready).toBe(false);
   expect(observed.error).toContain("Could not load");
 });
@@ -66,12 +79,12 @@ it("does not reset privacy or navigation after a transient inactive state", asyn
   await act(async () => { mock.listener?.("inactive"); mock.listener?.("active"); });
   expect(observed.ready).toBe(true);
 });
-it("bounds a stalled reload and allows retry", async () => {
+it("bounds a stalled reload on an uncached account and allows retry", async () => {
   vi.useFakeTimers();
+  mock.owner = "stalled-uncached";
   mock.hanging = true;
-  let pending: Promise<void>;
-  await act(async () => { pending = observed.reload(); });
-  await act(async () => { await vi.advanceTimersByTimeAsync(15000); await pending; });
+  await act(async () => renderer.update(createElement(AthleteBlocksProvider, null, createElement(Consumer))));
+  await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
   expect(observed.error).toContain("retry");
   mock.hanging = false;
   await act(async () => observed.reload());
@@ -87,7 +100,6 @@ it("keeps the block list and privacy gate ready across background returns", asyn
     mock.listener?.("background");
     mock.listener?.("active");
   });
-  expect(mock.listener).toBeNull();
   expect(mock.select).not.toHaveBeenCalled();
   expect(observed.ready).toBe(true);
   expect(observed.error).toBe("");
