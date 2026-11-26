@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { activeMultiplier, activityFromSample, type TimedMultiplier, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
+import { activeMultiplier, activityFromSample, historyEffortCredit, type HistoryEffortAward, competeNow, dayKey, type SyncReviewReceipt, type ActivitySample, type FitnessHistoryStatus, type FitnessHistoryTicket, type ProviderId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -20,16 +20,18 @@ async function historyRequest<T>(path: string, options?: RequestInit): Promise<T
 
 type HistoryImportProps = { offer: ProviderId | null; onDismiss: () => void; showSettings?: boolean };
 
-type ImportConfirmation = { pending: true } | { pending: false; boost?: TimedMultiplier };
+type ImportConfirmation = { pending: true } | { pending: false; boost?: HistoryEffortAward };
 
 function HistoryImportResult({ confirmation, onContinue }: {
   confirmation: ImportConfirmation;
   onContinue: () => void;
 }) {
   const boost = confirmation.pending ? null : activeMultiplier(confirmation.boost, new Date());
+  const headStart = !confirmation.pending && confirmation.boost ? historyEffortCredit(confirmation.boost) : 0;
+  const credit = headStart.toLocaleString("en-US");
   const title = confirmation.pending ? "Calibrating your Effort Boost…" : boost ? "You earned an Effort Boost" : "History imported";
   const body = confirmation.pending ? "Saving your selected workouts." : boost
-    ? "Your training history earned you a 30-day head start across all sports. Eligible training advances your Effort progression faster."
+    ? `Your training history earned you a 30-day head start across all sports.${headStart > 0 ? ` Your history supports ${credit} starting Effort in your primary sport.` : ""} Eligible training advances your Effort progression faster.`
     : "Your selected workouts are ready to view.";
   return <Sheet open fullScreen title={title} body={body} onClose={onContinue}>
     <div className="history-import-reveal">
@@ -47,6 +49,9 @@ export function HistoryImportPreview() {
       const now = Date.now();
       setConfirmation({ pending: false, boost: {
         multiplier: 3,
+        coveredHistoryDays: 90,
+        primarySport: "running",
+        weeklyVolumes: { running: 35 * 1609.344 },
         startsAt: new Date(now).toISOString(),
         boostEndsAt: new Date(now + 30 * 86_400_000).toISOString(),
       } });
@@ -114,7 +119,7 @@ function AccountHistoryImport({ offer, onDismiss, showSettings = true }: History
     try {
       if (confirmed) {
         setConfirmation({ pending: true });
-        const result = await historyRequest<{ boost?: TimedMultiplier }>("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
+        const result = await historyRequest<{ boost?: HistoryEffortAward }>("/api/fitness/sync", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historyLease: review.lease, selected }) });
         if (!mounted.current) return;
         setStatus({ completed: true, provider: review.provider, days: Number(days) });
         void refresh({ skipSyncReview: true });

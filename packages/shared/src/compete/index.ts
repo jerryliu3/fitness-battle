@@ -318,7 +318,7 @@ export {
 export { calculateLiveEffortScore, settleEffortWeek, updateEffortBaseline, trainingPosition, historicalBonusPoints, placementRewardPoints, createEmptyEffortState, createImportedEffortState, getScoreBreakdown, SPORT_CONFIG as EFFORT_SPORT_CONFIG, SCORING_VERSION as EFFORT_SCORING_VERSION, type EffortState, type LiveEffortInput } from './effort-score';
 export { liveEffortFromActivities } from './effort-volume';
 
-export { initializeEffortAccounts, startAccountEffort, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
+export { initializeEffortAccounts, historyEffortCredit, type HistoryEffortAward, startAccountEffort, settleAccountEffort, readAccountEffort, type EffortAccounts } from './effort-account';
 export { replayEffortHistory } from './effort-account';
 
 export { activityBaseTrainingXp, activityTrainingXp, eligibleTrainingXp, trainingXpInPeriod, formatTrainingXp } from './training-xp';

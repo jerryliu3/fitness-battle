@@ -1,5 +1,5 @@
 import { competeVolumeFromTotals } from "../compete-field-view";
-import { initializeEffortAccounts, settleAccountEffort } from './effort-account';
+import { initializeEffortAccounts, settleAccountEffort, startAccountEffort } from './effort-account';
 import { placementRewardPoints } from './effort-score';
 import { competitionPlace } from "../competition-place";
 import {
@@ -1288,8 +1288,13 @@ function reduceCompeteAction(
         ),
       };
     }
-    case "complete-onboarding":
-      return { ...rolled, onboardingCompleted: true };
+    case "complete-onboarding": {
+      if (rolled.onboardingCompleted) return rolled;
+      const started = rolled.effortAccounts?.[rolled.primary]?.starter ? rolled : startAccountEffort(rolled, {
+        multiplier: 1, startsAt: now.toISOString(), boostEndsAt: now.toISOString(),
+      });
+      return { ...started, onboardingCompleted: true };
+    }
     case "sync": {
       if (!action.provider || !action.allowSample) return rolled;
       const link = rolled.links.find((item) => item.provider === action.provider);

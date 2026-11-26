@@ -1,4 +1,4 @@
-import type { TimedMultiplier } from "@fitness-battle/shared";
+import type { HistoryEffortAward } from "@fitness-battle/shared";
 import { activityFromSample, mergeActivities, normalizeRouteReplay } from "@fitness-battle/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -231,13 +231,13 @@ export function persistSyncedActivities(
 ): Promise<boolean>;
 export function persistSyncedActivities(
   userId: string, activities: ActivitySample[], provenance: "recorded" | "imported", historyReviewLease: string,
-): Promise<false | TimedMultiplier>;
+): Promise<false | HistoryEffortAward>;
 export async function persistSyncedActivities(
   userId: string,
   activities: ActivitySample[],
   provenance: "recorded" | "imported" = "recorded",
   historyReviewLease?: string,
-): Promise<boolean | TimedMultiplier> {
+): Promise<boolean | HistoryEffortAward> {
   const db = serviceDb();
   if (!db || !isUuid(userId) || activities.length === 0) return false;
 

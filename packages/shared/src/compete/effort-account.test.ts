@@ -1,6 +1,6 @@
 import { expect,it } from 'vitest';
-import { freshState,settleCompetition } from './engine';
-import { initializeEffortAccounts,settleAccountEffort,readAccountEffort,replayEffortHistory } from './effort-account';
+import { freshState,settleCompetition, reduceCompete } from './engine';
+import { initializeEffortAccounts,settleAccountEffort,readAccountEffort,replayEffortHistory, historyEffortCredit, startAccountEffort, type HistoryEffortAward } from './effort-account';
 import type { Activity } from './sports';
 const activity:Activity={id:'strava-real',sport:'running',startedAt:'2026-11-16T14:00:00Z',distanceM:16093.44,movingSec:3600,avgHr:null,verified:true,source:'strava',provenance:'recorded',disposition:'counted'};
 it('uses calendar volume even without an enrollment and persists an idempotent frozen baseline',()=>{
@@ -44,4 +44,42 @@ it('leaves settled credit unchanged on ordinary reads after an old activity corr
  const corrected={...closed,activities:[{...activity,disposition:'excluded' as const}]};
  expect(settleAccountEffort(corrected,new Date('2026-11-23T12:00:00Z')).effortAccounts).toEqual(closed.effortAccounts);
  expect(replayEffortHistory(corrected,new Date('2026-11-23T12:00:00Z')).effortAccounts!.running!.state.cumulativeNormalizedVolume).toBe(0);
+});
+
+const importAward: HistoryEffortAward = {
+  primarySport: 'running',
+  coveredHistoryDays: 90,
+  weeklyVolumes: { running: 7 * 1609.344, cycling: 40 * 1609.344 },
+  multiplier: 3,
+  startsAt: '2026-11-16T12:00:00Z',
+  boostEndsAt: '2026-12-16T12:00:00Z',
+};
+
+it('credits ten percent of each historical training benchmark while sharing the boost', () => {
+  const now = new Date(importAward.startsAt);
+  const credited = startAccountEffort(freshState(now), importAward);
+  expect(historyEffortCredit(importAward)).toBe(250);
+  expect(historyEffortCredit({ ...importAward, coveredHistoryDays: 45 })).toBe(125);
+  expect(credited.ratings.find(r => r.sport === 'running')?.openElo).toBe(250);
+  expect(credited.ratings.find(r => r.sport === 'cycling')?.openElo).toBe(250);
+  expect(credited.ratings.find(r => r.sport === 'strength')?.openElo).toBe(0);
+  expect(credited.effortAccounts?.strength?.starter?.multiplier).toBe(3);
+  expect(readAccountEffort(credited, 'running', now)?.liveScore).toBe(250);
+  expect(startAccountEffort(credited, importAward)).toBe(credited);
+});
+
+it('starts at zero without history and preserves higher earned progress during a later import', () => {
+  const now = new Date('2026-11-09T12:00:00Z');
+  const newAccount = reduceCompete(freshState(now), { type: 'complete-onboarding', now: now.toISOString() });
+  expect(newAccount.effortAccounts?.running?.state.starterProgress).toBe(0);
+  expect(newAccount.ratings.find(r => r.sport === 'running')?.openElo).toBe(0);
+  const earned = settleAccountEffort({
+    ...newAccount,
+    activities: [{ ...activity, startedAt: '2026-11-13T14:00:00Z', distanceM: 35 * 1609.344 }],
+  }, new Date(importAward.startsAt));
+  expect(earned.ratings.find(r => r.sport === 'running')!.openElo).toBeGreaterThan(250);
+  const imported = startAccountEffort(earned, importAward);
+  expect(imported.ratings.find(r => r.sport === 'running')?.openElo)
+    .toBe(earned.ratings.find(r => r.sport === 'running')?.openElo);
+  expect(imported.effortAccounts?.running?.starter?.multiplier).toBe(3);
 });
