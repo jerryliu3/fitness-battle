@@ -126,6 +126,7 @@ describe("checkStoreVersionOnLaunch", () => {
       ok: true,
       json: async () => ({
         latestVersion: "0.5.0",
+        releaseNotes: "• Faster Apple Health sync\n• Crew weekly contracts",
         iosStoreUrl: "itms-apps://apps.apple.com/app/id6822939070",
       }),
     });
@@ -133,6 +134,7 @@ describe("checkStoreVersionOnLaunch", () => {
     const t0 = 1_700_000_000_000;
     await checkStoreVersionOnLaunch(t0);
     expect(state.alert).toHaveBeenCalledTimes(1);
+    expect(state.alert.mock.calls[0]![1]).toContain("Faster Apple Health sync");
 
     const buttons = state.alert.mock.calls[0]![2] as { text: string; onPress?: () => void }[];
     buttons.find((b) => b.text === "Update")?.onPress?.();

@@ -68,6 +68,7 @@ export async function checkStoreVersionOnLaunch(now = Date.now()): Promise<void>
     if (!res.ok) return;
     const data = (await res.json()) as {
       latestVersion?: unknown;
+      releaseNotes?: unknown;
       iosStoreUrl?: unknown;
     };
     if (typeof data.latestVersion !== "string") return;
@@ -99,9 +100,15 @@ export async function checkStoreVersionOnLaunch(now = Date.now()): Promise<void>
         ? data.iosStoreUrl
         : DEFAULT_IOS_STORE_URL;
 
+    const releaseNotes =
+      typeof data.releaseNotes === "string" ? data.releaseNotes.trim() : "";
+    const message = releaseNotes
+      ? `Overtaek ${data.latestVersion} is available on the App Store.\n\n${releaseNotes}`
+      : `Overtaek ${data.latestVersion} is available on the App Store.`;
+
     Alert.alert(
       "New version available",
-      `Overtaek ${data.latestVersion} is available on the App Store.`,
+      message,
       [
         { text: "Later", style: "cancel" },
         { text: "Update", onPress: () => void Linking.openURL(storeUrl) },
