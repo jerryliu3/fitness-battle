@@ -147,15 +147,22 @@ export function replayCourseImportSql(input: {
   reviewNotes: string;
   displayAllowed?: boolean;
   reviewedAt?: string;
+  /** When ledger keys differ from catalog (e.g. off-catalog finisher ingest). */
+  eventEditionId?: number;
 }): string {
   const payload = JSON.stringify(input.points);
   const display = input.displayAllowed ?? false;
   const reviewed = input.reviewedAt ?? new Date().toISOString();
-  return `do $$
-declare
-  v_edition bigint;
-begin
-  select ed.id into v_edition
+  const editionResolve =
+    typeof input.eventEditionId === "number"
+      ? `select ed.id into v_edition
+  from public.event_editions ed
+  where ed.id = ${input.eventEditionId}
+  limit 1;
+  if v_edition is null then
+    raise exception 'Edition not found for event_edition_id %', ${input.eventEditionId};
+  end if;`
+      : `select ed.id into v_edition
   from public.event_editions ed
   join public.events e on e.id = ed.event_id
   join public.sources s on s.id = e.source_id
@@ -165,7 +172,12 @@ begin
   limit 1;
   if v_edition is null then
     raise exception 'Edition not found for % / % / %', ${quote(input.sourceSlug)}, ${quote(input.externalEventId)}, ${input.editionYear};
-  end if;
+  end if;`;
+  return `do $$
+declare
+  v_edition bigint;
+begin
+  ${editionResolve}
   insert into public.rankings_replay_courses (
     event_edition_id,
     distance_slug,

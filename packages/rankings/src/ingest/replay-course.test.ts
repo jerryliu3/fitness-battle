@@ -8,6 +8,7 @@ import {
   parseGpxTrkpts,
   parseMapMyRunRouteHtml,
   replayCourseFromGpx,
+  replayCourseImportSql,
 } from "./replay-course";
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), "../../fixtures");
@@ -35,6 +36,26 @@ describe("replay course", () => {
     for (let i = 1; i < points.length; i += 1) {
       expect(points[i]![2]).toBeGreaterThan(points[i - 1]![2]);
     }
+  });
+
+  it("emits SQL that can target an explicit event_edition_id", () => {
+    const sql = replayCourseImportSql({
+      sourceSlug: "tokyo_marathon",
+      externalEventId: "tokyo-marathon-2026",
+      editionYear: 2026,
+      distanceSlug: "marathon",
+      points: [
+        [139.76, 35.68, 0],
+        [139.77, 35.69, 1000],
+      ],
+      sourceUrl: "https://www.marathon.tokyo/en/about/course/",
+      attribution: "Tokyo Marathon 2026",
+      reviewNotes: "test",
+      displayAllowed: true,
+      eventEditionId: 15,
+    });
+    expect(sql).toContain("where ed.id = 15");
+    expect(sql).not.toContain("tokyo_marathon");
   });
 
   it("scales committed Tokyo marathon GPX to 42.195 km", () => {
