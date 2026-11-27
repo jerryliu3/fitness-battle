@@ -20,9 +20,17 @@ on:
       - "packages/pursuit/**"
       - "pnpm-lock.yaml"
   workflow_dispatch:
+    inputs:
+      runtime_version:
+        description: "Target runtime (0.3.0 is the older store binary recovery channel)"
+        type: choice
+        default: current
+        options:
+          - current
+          - "0.3.0"
 
 concurrency:
-  group: eas-ota-production
+  group: eas-ota-production-${{ inputs.runtime_version || 'current' }}
   cancel-in-progress: true
 
 jobs:
@@ -57,6 +65,11 @@ jobs:
       - name: Install dependencies
         working-directory: .
         run: pnpm install --frozen-lockfile
+
+      - name: Target older store runtime for recovery
+        if: github.event_name == 'workflow_dispatch' && inputs.runtime_version == '0.3.0'
+        run: |
+          node -e 'const fs = require("node:fs"); const app = JSON.parse(fs.readFileSync("app.json", "utf8")); app.expo.version = "0.3.0"; fs.writeFileSync("app.json", JSON.stringify(app, null, 2) + "\n");'
 
       - name: Publish update
         env:

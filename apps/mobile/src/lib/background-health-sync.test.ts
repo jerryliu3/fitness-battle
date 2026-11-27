@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  available: true,
   defineTask: vi.fn(),
   isTaskDefined: vi.fn(() => true),
   isTaskRegisteredAsync: vi.fn(),
@@ -21,26 +22,23 @@ vi.mock("react-native", () => ({
   },
 }));
 
-vi.mock("expo-task-manager", () => ({
-  defineTask: mocks.defineTask,
-  isTaskDefined: mocks.isTaskDefined,
-  isTaskRegisteredAsync: mocks.isTaskRegisteredAsync,
-}));
-
-vi.mock("expo-background-fetch", () => ({
-  BackgroundFetchStatus: {
-    Restricted: 1,
-    Denied: 2,
-    Available: 3,
+vi.mock("./background-health-modules", () => ({
+  get backgroundHealthModules() {
+    return mocks.available ? {
+      TaskManager: {
+        defineTask: mocks.defineTask,
+        isTaskDefined: mocks.isTaskDefined,
+        isTaskRegisteredAsync: mocks.isTaskRegisteredAsync,
+      },
+      BackgroundFetch: {
+        BackgroundFetchStatus: { Restricted: 1, Denied: 2, Available: 3 },
+        BackgroundFetchResult: { NoData: 1, NewData: 2, Failed: 3 },
+        getStatusAsync: mocks.getStatusAsync,
+        registerTaskAsync: mocks.registerTaskAsync,
+        unregisterTaskAsync: mocks.unregisterTaskAsync,
+      },
+    } : null;
   },
-  BackgroundFetchResult: {
-    NoData: 1,
-    NewData: 2,
-    Failed: 3,
-  },
-  getStatusAsync: mocks.getStatusAsync,
-  registerTaskAsync: mocks.registerTaskAsync,
-  unregisterTaskAsync: mocks.unregisterTaskAsync,
 }));
 
 vi.mock("./supabase", () => ({
@@ -59,12 +57,14 @@ vi.mock("./device-health", () => ({
 import {
   BACKGROUND_HEALTH_SYNC_TASK,
   registerBackgroundHealthSync,
+  unregisterBackgroundHealthSync,
   runBackgroundHealthSyncTask,
 } from "./background-health-sync";
 
 describe("background-health-sync", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.available = true;
     mocks.platformOs = "ios";
     mocks.getStatusAsync.mockResolvedValue(3);
     mocks.isTaskRegisteredAsync.mockResolvedValue(false);
@@ -74,6 +74,20 @@ describe("background-health-sync", () => {
     });
     mocks.syncAppleHealth.mockResolvedValue({ ok: true, count: 2 });
     mocks.syncHealthConnect.mockResolvedValue({ ok: true, count: 1 });
+  });
+
+  it("defines supported native tasks during module initialization", async () => {
+    vi.resetModules();
+    mocks.isTaskDefined.mockReturnValueOnce(false);
+    await import("./background-health-sync");
+    expect(mocks.defineTask).toHaveBeenCalledWith(BACKGROUND_HEALTH_SYNC_TASK, expect.any(Function));
+  });
+
+  it("does not define a task when the native modules are missing", async () => {
+    vi.resetModules();
+    mocks.available = false;
+    await import("./background-health-sync");
+    expect(mocks.defineTask).not.toHaveBeenCalled();
   });
 
   it("registers the background task on iOS when available", async () => {
@@ -87,6 +101,16 @@ describe("background-health-sync", () => {
         startOnBoot: true,
       }),
     );
+  });
+
+  it("leaves background sync unavailable on older store binaries", async () => {
+    mocks.available = false;
+    expect(await registerBackgroundHealthSync()).toBe(false);
+    await unregisterBackgroundHealthSync();
+    expect(await runBackgroundHealthSyncTask()).toBeUndefined();
+    expect(mocks.getStatusAsync).not.toHaveBeenCalled();
+    expect(mocks.isTaskRegisteredAsync).not.toHaveBeenCalled();
+    expect(mocks.getSession).not.toHaveBeenCalled();
   });
 
   it("skips registration on web", async () => {
@@ -110,19 +134,5 @@ describe("background-health-sync", () => {
     mocks.platformOs = "android";
     expect(await runBackgroundHealthSyncTask()).toBe(2); // NewData
     expect(mocks.syncHealthConnect).toHaveBeenCalledWith({ skipIfEmpty: true });
-  });
-
-  it("no-ops safely when native ExpoTaskManager or ExpoBackgroundFetch are missing", async () => {
-    vi.resetModules();
-    vi.doMock("expo-task-manager", () => {
-      throw new Error("Cannot find native module 'ExpoTaskManager'");
-    });
-    vi.doMock("expo-background-fetch", () => {
-      throw new Error("Cannot find native module 'ExpoBackgroundFetch'");
-    });
-    const mod = await import("./background-health-sync");
-    expect(await mod.registerBackgroundHealthSync()).toBe(false);
-    expect(await mod.runBackgroundHealthSyncTask()).toBe(1);
-    await expect(mod.unregisterBackgroundHealthSync()).resolves.toBeUndefined();
   });
 });
