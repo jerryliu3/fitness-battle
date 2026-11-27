@@ -15,6 +15,8 @@ vi.mock("../ui/material-back", () => ({ MaterialBack: "MaterialBack" }));
 vi.mock("../ui/course-options", () => ({ GraphOptions: "GraphOptions", LayersMenu: "LayersMenu" }));
 vi.mock("./competition-panel", () => ({ CompetitionPanel: "CompetitionPanel" }));
 vi.mock("./race-updates", () => ({ RaceUpdates: "RaceUpdates" }));
+vi.mock("../ui/ember-refresh-scroll", () => ({ EmberRefreshScroll: "EmberRefreshScroll" }));
+vi.mock("../lib/use-activity-sync", () => ({ usePullRefresh: () => vi.fn() }));
 vi.mock("../ui/compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [] }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "alice" } }) }));

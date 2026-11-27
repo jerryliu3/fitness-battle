@@ -54,7 +54,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AppState, Text } from "react-native";
+import { AppState, Platform, Text } from "react-native";
 import {
   accountStorageKeys,
   hydrateAccountIdentity,
@@ -109,7 +109,9 @@ interface CompeteContextValue {
   dispatch: (action: Action) => void;
   previewSyncReview?: () => void;
   beginSyncReviewBatch?: (accountId?: string) => void;
-  endSyncReviewBatch?: (accountId?: string) => void;
+  endSyncReviewBatch?: (accountId?: string, defer?: boolean) => void;
+  hasPendingSyncReview: boolean;
+  presentSyncReview: (accountId: string) => void;
   returnGain: number;
   clearReturn: () => void;
   fieldNotice: FieldNotice | null;
@@ -215,7 +217,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
 
   const [savedState, setState] = useState<CompeteState | null>(null);
   const syncReviewBlocked = useRef(false);
-  const holdRemoteRef = useRef<(next: CompeteState, known?: CompeteState) => CompeteState>(next => next);
+  const holdRemoteRef = useRef<(next: CompeteState, known?: CompeteState, defer?: boolean, skip?: boolean) => CompeteState>(next => next);
   const loadedOwnerRef = useRef<string | null | undefined>(undefined);
   const state = loadedOwnerRef.current === owner ? savedState : null;
   const [returnGain, setReturnGain] = useState(0);
@@ -379,7 +381,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               dirty || unitsUnsavedRef.current,
             );
           // First install establishes a baseline; later launches review unseen imports.
-          if (hasCache && !dirty) next = holdRemoteRef.current(next, known);
+          if (hasCache && !dirty) next = holdRemoteRef.current(next, known, Platform.OS !== "web");
           if (alive) {
             remoteLoaded = true;
             setStandingsStale(false);
@@ -624,13 +626,14 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             dirtyRef.current !== generation ||
             saveTimer.current != null;
         }
+        if (syncReviewBlocked.current) return false;
         const snapshot = applyRemoteSnapshot(
           stateRef.current,
           remote,
           dirty,
           unitsUnsavedRef.current,
         );
-        const next = options?.skipSyncReview ? snapshot : holdRemoteRef.current(snapshot);
+        const next = holdRemoteRef.current(snapshot, undefined, Platform.OS !== "web", options?.skipSyncReview);
         seedArenaBaselinesFromState(
           next,
           account.userId,
@@ -1105,6 +1108,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       (key) =>
         key === fieldSeenStorageKey(expectedId) ||
         key === `fb-overtake-seen:${expectedId}` ||
+        key === `overtaek:pull-refresh:${expectedId}:home` ||
+        key === `overtaek:pull-refresh:${expectedId}:compete` ||
         key.startsWith(`fb-arena-baseline:${expectedId}:`) ||
         /^moment:v[12]:fb-arena-baseline:/.test(key) && key.includes(`:${expectedId}:`),
     );
@@ -1208,6 +1213,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         previewSyncReview: syncReview.preview,
         beginSyncReviewBatch: syncReview.begin,
         endSyncReviewBatch: syncReview.end,
+        hasPendingSyncReview: !debugActive && syncReview.waiting,
+        presentSyncReview: syncReview.present,
         returnGain,
         clearReturn,
         fieldNotice,

@@ -7,30 +7,18 @@ import { ChoicePicker } from "../ui/choice-picker";
 
 import {
   accountTimeZone,
-  activityFromSample,
   parseManualActivity,
   manualActivityInstant,
   competeNow,
   SPORTS,
   sportById,
-  type ActivitySample,
-  type ReadinessSample,
   type SportId,
 } from "@fitness-battle/shared";
 import { Link } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
-import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
-import { providersForDevice } from "../lib/platform-providers";
-import { mobileEnv } from "../lib/env";
-import {
-  createAppleHealthDeps,
-  createHealthConnectDeps,
-  syncAppleHealth,
-  syncHealthConnect,
-} from "../lib/device-health";
 import { FocusButton, FocusSheet } from "../ui/focus";
 import { AnchoredMenu, AnchoredMenuItem, useAnchoredMenu } from "../ui/anchored-menu";
 import { SportIcon } from "../ui/sport-icon";
@@ -40,16 +28,10 @@ export function HomeActivityActions({
 }: {
   compact?: boolean;
 }) {
-  const { state, canWrite, canWriteLocal, dispatch, refresh,
-    beginSyncReviewBatch,
-    endSyncReviewBatch,
-  } = useCompeteStore();
+  const { state, canWrite, canWriteLocal, dispatch } = useCompeteStore();
   const canLogLocal = canWriteLocal ?? canWrite;
-  const { user, accessToken, offlineMode } = useAuth();
-  const owner = useRef(user?.id);
-  owner.current = user?.id;
+  const { user } = useAuth();
   const [open, setOpen] = useState(false),
-    [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const sportMenu = useAnchoredMenu({ minWidth: 196, estimatedHeight: SPORTS.length * 46 + 12 });
   const [formError, setFormError] = useState("");
@@ -59,152 +41,18 @@ export function HomeActivityActions({
   const [miles, setMiles] = useState(""),
     [minutes, setMinutes] = useState("");
   useEffect(() => setNote(""), [user?.id]);
-  const flight = useRef(false);
   const pendingSheetOpen = useRef(false);
   if (!state) return null;
-  async function sync() {
-    if (!user || !canWrite || flight.current) return;
-    const id = user.id;
-    const supported = new Set(
-      providersForDevice().map((provider) => provider.id),
-    );
-    const links = state!.links.filter(
-      (link) => link.linked && supported.has(link.provider),
-    );
-    if (!links.length) {
-      setNote("Check your data sync settings to connect a tracker.");
-      return;
-    }
-    flight.current = true;
-    setBusy(true);
-    beginSyncReviewBatch?.(id);
-    setNote("");
-    let successes = 0, failures = 0;
-    let limitMessage: string | undefined;
-    try {
-      for (const link of links) {
-        if (owner.current !== id) return;
-        try {
-          if (
-            link.provider === "apple_health" ||
-            link.provider === "google_health"
-          ) {
-            const auth = {
-              localOnly: offlineMode,
-              lastSyncAt:
-                state!.activities
-                  .filter((a) => a.source === link.provider)
-                  .map((a) => a.startedAt)
-                  .sort()
-                  .at(-1) ?? null,
-              getAccessToken: async () => ({
-                token: accessToken ?? undefined,
-                userId: id,
-              }),
-            };
-            const result =
-              link.provider === "apple_health"
-                ? await syncAppleHealth(createAppleHealthDeps(auth))
-                : await syncHealthConnect(createHealthConnectDeps(auth));
-            if (owner.current !== id) return;
-            if (!result.ok) { failures += 1; continue; }
-            if (result.activities?.length) {
-              dispatch({
-                type: "apply-sync",
-                accountId: id,
-                provider: link.provider,
-                activities: result.activities.flatMap((sample) => {
-                  const a = activityFromSample(sample, "recorded");
-                  return a ? [a] : [];
-                }),
-                linkStatus: "connected",
-              });
-            } else await refresh();
-            if (owner.current !== id) return;
-            successes += 1;
-          } else if (!offlineMode) {
-            const body = await requestApi<{
-              activities?: ActivitySample[];
-              readiness?: ReadinessSample[];
-              usedMock?: boolean;
-            }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", {
-              allowUnpersisted: true,
-              body: { provider: link.provider },
-            });
-            if (owner.current !== id) return;
-            dispatch({
-              type: "apply-sync",
-              accountId: id,
-              provider: link.provider,
-              readiness: (body.readiness ?? []).flatMap((sample) =>
-                sample.provider === link.provider
-                  ? [
-                      {
-                        id: sample.id,
-                        provider: link.provider,
-                        day: sample.day,
-                        score: sample.score,
-                      },
-                    ]
-                  : [],
-              ),
-              activities: (body.activities ?? []).flatMap((sample) => {
-                const activity = activityFromSample(
-                  sample,
-                  body.usedMock ? "demo" : "recorded",
-                );
-                return activity ? [activity] : [];
-              }),
-              linkStatus: body.usedMock ? "stub" : "connected",
-            });
-            if (body.usedMock) failures += 1; else successes += 1;
-          }
-        } catch (error) {
-          failures += 1;
-          if (error instanceof Error && "code" in error && error.code === "sync_manual_limit") limitMessage = error.message;
-        }
-      }
-      if (owner.current === id) {
-        if (!successes) void playCue("error");
-        setNote(limitMessage ?? (successes ? failures ? "Activities synced. Check your data sync settings for integrations that need attention." : "Sync completed." : "Sync could not finish. Check your data sync settings."));
-      }
-    } catch {
-      if (owner.current === id) { void playCue("error"); setNote("Sync could not finish. Check your data sync settings."); }
-    } finally {
-      endSyncReviewBatch?.(id);
-      flight.current = false;
-      setBusy(false);
-    }
-  }
-  const actionRow = compact ? (
-    <View style={{ flexDirection: "row", gap: 8 }}>
-      <IconButton primary icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
-      <View ref={sportMenu.anchorRef} collapsable={false}>
-        <IconButton icon="plus" label="Add activity" disabled={!user || !canLogLocal || busy} onPress={sportMenu.toggle} />
-      </View>
-    </View>
-  ) : (
-    <View style={{ flexDirection: "row", gap: 8 }}>
-      <View style={{ flex: 1 }}><FocusButton
-        label={busy ? "Syncing…" : "Sync activities"}
-        disabled={!user || !canWrite || busy}
-        onPress={() => void sync()}
-      /></View>
-      <View ref={sportMenu.anchorRef} collapsable={false} style={{ flex: 1 }}><FocusButton
-        secondary
-        label="Add activity"
-        disabled={!user || !canLogLocal || busy}
-        onPress={sportMenu.toggle}
-      /></View>
-    </View>
-  );
-
   return (
     <View style={{ gap: 10 }}>
-      {actionRow}
-      {!user && !compact && (
-        <Link href="/athlete">Sign in to add or sync activities</Link>
-      )}
+      <View ref={sportMenu.anchorRef} collapsable={false}>
+        {compact ? (
+          <IconButton icon="plus" label="Add activity" disabled={!user || !canLogLocal} onPress={sportMenu.toggle} />
+        ) : (
+          <FocusButton secondary label="Add activity" disabled={!user || !canLogLocal} onPress={sportMenu.toggle} />
+        )}
+      </View>
+      {!user && !compact && <Link href="/athlete">Sign in to add activities</Link>}
       <Toast message={note} onDismiss={() => setNote("")} />
       <AnchoredMenu
         open={sportMenu.open}

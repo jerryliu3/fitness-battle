@@ -23,7 +23,7 @@ import {
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, BackHandler, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, BackHandler, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { forgetCourseCameras } from "../../src/features/deferred-course-map";
@@ -33,6 +33,8 @@ import { SleepPanel } from "../../src/features/sleep-panel";
 import { useAuth } from "../../src/lib/auth";
 import { requestApi } from "../../src/lib/api";
 import { mobileEnv } from "../../src/lib/env";
+import { EmberRefreshScroll } from "../../src/ui/ember-refresh-scroll";
+import { usePullRefresh } from "../../src/lib/use-activity-sync";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { FocusSheet } from "../../src/ui/focus";
@@ -47,6 +49,7 @@ const f=useFocusStyles();
     accountKey,
     dispatch,
     standingsStale,
+    hasPendingSyncReview,
     refresh,
     canWrite,
     saveError,
@@ -87,6 +90,14 @@ const f=useFocusStyles();
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const specialEvents = useSpecialEvents(!persistent && focused && !experience.immersive);
+  const pullRefresh = usePullRefresh();
+  const refreshCompete = () => {
+    if (hasPendingSyncReview) {
+      void specialEvents.reload();
+      return pullRefresh();
+    }
+    return Promise.all([pullRefresh(), specialEvents.reload()]);
+  };
   const [specialView, setSpecialView] = useState<{ id: string; mode: "register" | "fullscreen" } | null>(null);
   const [specialBusy, setSpecialBusy] = useState(false);
   const [specialError, setSpecialError] = useState("");
@@ -205,7 +216,7 @@ const f=useFocusStyles();
         />
       ) : null}
       {persistent && experience.immersive && <View style={{ position: "absolute", top: insets.top + 54, right: 16, zIndex: 20 }}>{courseOptions}</View>}
-      {<ArenaSheet scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? metricImmersive && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
+      {<ArenaSheet onRefresh={refreshCompete} scrollable={!queued} persistent={persistent} expandRequest={expandRequest} defaultSheetIndex={queued ? 1 : 0} active={focused && experience.immersive} overview={persistent && !queue?.queued && !queue?.awaitingField ? metricImmersive && selectedSport ? <PointsTimeline state={state} event={selectedSport} fraction={pointsFraction} onChange={setPointsFraction} /> : <CompetitionTimelineControls /> : undefined}>
 <CoursePreviewReadyProvider onReadyChange={setPreviewsReady}>
 <SectionStack divided={false}>
         {!persistent && <View style={{ gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><CompeteIcon name="wreath" size={34} gold /><AppText role="display" accessibilityRole="header">Compete</AppText></View></View><View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}><AppText role="body" secondary>{dateRange}</AppText><View style={{ backgroundColor: c.actionSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}><AppText role="label">{timeRemaining}</AppText></View></View></View>}
@@ -326,7 +337,7 @@ const f=useFocusStyles();
   );
 }
 
-function ArenaSheet({ persistent, children, defaultSheetIndex, ...props }: { persistent: boolean; children: React.ReactNode; expandRequest: number; active: boolean; overview?: React.ReactNode; scrollable?: boolean; defaultSheetIndex?: 0 | 1 | 2 }) {
+function ArenaSheet({ persistent, children, defaultSheetIndex, onRefresh, ...props }: { persistent: boolean; children: React.ReactNode; onRefresh: () => Promise<unknown>; expandRequest: number; active: boolean; overview?: React.ReactNode; scrollable?: boolean; defaultSheetIndex?: 0 | 1 | 2 }) {
   const f = useFocusStyles();
-  return persistent ? <CompeteSheet {...props} defaultIndex={defaultSheetIndex}>{children}</CompeteSheet> : <ScrollView contentContainerStyle={f.content}>{children}</ScrollView>;
+  return persistent ? <CompeteSheet {...props} defaultIndex={defaultSheetIndex}>{children}</CompeteSheet> : <EmberRefreshScroll screen="compete" onRefresh={onRefresh} contentContainerStyle={f.content}>{children}</EmberRefreshScroll>;
 }

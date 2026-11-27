@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
-const mock = vi.hoisted(() => ({ state: null as any, user: { id: "athlete", mode: "demo" } as any, canWrite: true, dispatch: vi.fn(), supported: ["strava"], device: vi.fn(), begin: vi.fn(), end: vi.fn(), refresh: vi.fn() }));
+const mock = vi.hoisted(() => ({ state: null as any, user: { id: "athlete", mode: "demo" } as any, canWrite: true, canWriteLocal: undefined as boolean | undefined, hasPendingSyncReview: false, dispatch: vi.fn(), supported: ["strava"], device: vi.fn(), begin: vi.fn(), end: vi.fn(), refresh: vi.fn() }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles }, Text: "Text", TextInput: "TextInput", View: "View" }));
@@ -11,7 +11,7 @@ vi.mock("expo-router", () => ({ Link: "Link" }));
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "http://localhost" } }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, offlineMode: true, accessToken: null }) }));
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, canWrite: mock.canWrite, dispatch: mock.dispatch, refresh: mock.refresh, beginSyncReviewBatch: mock.begin, endSyncReviewBatch: mock.end }) }));
+vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, canWrite: mock.canWrite, canWriteLocal: mock.canWriteLocal, hasPendingSyncReview: mock.hasPendingSyncReview, dispatch: mock.dispatch, refresh: mock.refresh, beginSyncReviewBatch: mock.begin, endSyncReviewBatch: mock.end }) }));
 vi.mock("../lib/platform-providers", () => ({ providersForDevice: () => mock.supported.map((id) => ({ id })) }));
 vi.mock("../lib/device-health", () => ({ syncAppleHealth: mock.device, syncHealthConnect: mock.device, createAppleHealthDeps: vi.fn(), createHealthConnectDeps: vi.fn() }));
 vi.mock("../ui/toast", () => ({ Toast: (props: any) => props.message ? createElement("Toast", props, props.message) : null }));
@@ -31,13 +31,22 @@ vi.mock("../ui/anchored-menu", async () => {
  };
 });
 import { HomeActivityActions } from "./home-activity-actions";
+import { usePullRefresh } from "../lib/use-activity-sync";
+
 let renderer: ReactTestRenderer;
+let pull: ReturnType<typeof usePullRefresh>;
+function TestPage() {
+ pull = usePullRefresh();
+ return createElement(HomeActivityActions);
+}
 const button = (label: string) => renderer.root.findAllByType("Button" as any).find((node) => node.props.label === label)!;
 beforeEach(async () => {
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
  mock.dispatch.mockClear(); mock.device.mockReset(); mock.begin.mockClear(); mock.end.mockClear(); mock.refresh.mockClear(); mock.canWrite = true; mock.supported = ["strava"];
+ mock.canWriteLocal = undefined;
+ mock.hasPendingSyncReview = false;
  mock.user = { id: "athlete", mode: "demo" }; mock.state = freshState();
- await act(async () => { renderer = create(createElement(HomeActivityActions, {})); });
+ await act(async () => { renderer = create(createElement(TestPage)); });
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 describe("native Home actions", () => {
@@ -59,18 +68,23 @@ describe("native Home actions", () => {
   expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "log-manual", distanceM: 4023.36, movingSec: 1800 }));
   expect(renderer.root.findAllByType("Sheet" as any)).toHaveLength(0);
  });
- it("disables writing and syncing while account hydration has failed", async () => {
+ it("disables manual entry while account hydration has failed", async () => {
   mock.canWrite = false;
   await act(async () => {
-   renderer.update(createElement(HomeActivityActions, {}));
+   renderer.update(createElement(TestPage));
   });
    expect(button("Add activity").props.disabled).toBe(true);
-   expect(button("Sync activities").props.disabled).toBe(true);
+ });
+ it("allows manual entry when the account can only write locally", async () => {
+  mock.canWrite = false;
+  mock.canWriteLocal = true;
+  await act(async () => renderer.update(createElement(TestPage)));
+  expect(button("Add activity").props.disabled).toBe(false);
  });
  it("does not invoke another platform’s device tracker", async () => {
   mock.state = { ...mock.state, links: mock.state.links.map((link: any) => ({ ...link, linked: link.provider === "apple_health" })) };
-  await act(async () => renderer.update(createElement(HomeActivityActions, {})));
-  await act(async () => button("Sync activities").props.onPress());
+  await act(async () => renderer.update(createElement(TestPage)));
+  await act(async () => pull());
   expect(mock.device).not.toHaveBeenCalled();
   expect(mock.dispatch).not.toHaveBeenCalled();
  });
@@ -80,10 +94,45 @@ it("batches device-health samples through the receipt gate instead of bypassing 
   mock.supported = ["apple_health"];
   mock.state = { ...mock.state, links: mock.state.links.map((link: any) => ({ ...link, linked: link.provider === "apple_health" })) };
   mock.device.mockResolvedValue({ ok: true, message: "Synced", activities: [{ id: "health-run", provider: "apple_health", externalId: "run", categorySlug: "running", startedAt: new Date().toISOString(), metricValue: 5000, movingSec: 1800, rawName: "Run" }] });
-  await act(async () => renderer.update(createElement(HomeActivityActions, {})));
-  await act(async () => button("Sync activities").props.onPress());
+  await act(async () => renderer.update(createElement(TestPage)));
+  await act(async () => pull());
   expect(mock.begin).toHaveBeenCalledWith("athlete");
   expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "apply-sync", accountId: "athlete", provider: "apple_health", activities: [expect.objectContaining({ provenance: "recorded", source: "apple_health" })] }));
-  expect(mock.refresh).not.toHaveBeenCalled();
-  expect(mock.end).toHaveBeenCalledWith("athlete");
+  expect(mock.refresh).toHaveBeenCalledTimes(1);
+  expect(mock.end).toHaveBeenCalledWith("athlete", true);
+});
+
+it("shares an in-flight tracker sync across pulls", async () => {
+  mock.supported = ["apple_health"];
+  mock.state = { ...mock.state, links: mock.state.links.map((link: any) => ({ ...link, linked: link.provider === "apple_health" })) };
+  let finishSync!: (result: { ok: boolean }) => void;
+  mock.device.mockImplementation(() => new Promise(resolve => { finishSync = resolve; }));
+
+  await act(async () => renderer.update(createElement(TestPage)));
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  await act(async () => { first = pull(); });
+  await act(async () => { second = pull(); });
+  expect(mock.refresh).toHaveBeenCalledTimes(2);
+  expect(mock.device).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    finishSync({ ok: false });
+    await Promise.all([first, second]);
+  });
+  expect(mock.begin).toHaveBeenCalledTimes(1);
+  expect(mock.end).toHaveBeenCalledTimes(1);
+});
+
+
+it("reuses the pending receipt without another tracker sync", async () => {
+  mock.hasPendingSyncReview = true;
+  mock.supported = ["apple_health"];
+  mock.state = { ...mock.state, links: mock.state.links.map((link: any) => ({ ...link, linked: link.provider === "apple_health" })) };
+
+  await act(async () => renderer.update(createElement(TestPage)));
+  await act(async () => pull());
+
+  expect(mock.refresh).toHaveBeenCalledExactlyOnceWith({ ifStale: true });
+  expect(mock.device).not.toHaveBeenCalled();
+  expect(mock.begin).not.toHaveBeenCalled();
 });

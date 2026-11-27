@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { homeTrainingLine, type CompeteState } from "@fitness-battle/shared";
+import { homeTrainingLine, type CompeteState, type OpenLineRange } from "@fitness-battle/shared";
 import { View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { createThemedStyles, useThemedStyles } from "../theme";
 import { ChartFrame } from "../ui/chart-frame";
 import { OpenLineChart } from "../ui/open-line-chart";
 import { AppText } from "../ui/section";
-import { HomeActivityActions } from "./home-activity-actions";
+import { OpenLineRangeToggle } from "./chart-range-toggle";
 
 export function WeekChart({
   state,
@@ -19,15 +19,20 @@ export function WeekChart({
   const { user } = useAuth();
 
   const [range, setRange] = useState<"week" | "fourWeeks">("week");
+  function changeRange(next: OpenLineRange) {
+    if (next === "week" || next === "fourWeeks") setRange(next);
+  }
   const chart = homeTrainingLine(state, range, undefined, user?.createdAt);
   return (
     <ChartFrame ready={ready}>
       <View style={s.card}>
         <View style={s.header}>
-          <AppText role="display" accessibilityRole="header">
+          <AppText role="display" accessibilityRole="header" style={s.title}>
             This week
           </AppText>
-          <HomeActivityActions compact />
+          <View style={s.range}>
+            <OpenLineRangeToggle value={range} onChange={changeRange} includeYear={false} />
+          </View>
         </View>
         <OpenLineChart
           openHero
@@ -38,10 +43,8 @@ export function WeekChart({
           label="Cumulative training hours"
           unit="hrs"
           range={range}
-          onRangeChange={(next) => {
-            if (next === "week" || next === "fourWeeks") setRange(next);
-          }}
-          includeYear={false}
+          onRangeChange={changeRange}
+          hideRangeToggle
         />
       </View>
     </ChartFrame>
@@ -50,11 +53,7 @@ export function WeekChart({
 
 const sThemes = createThemedStyles(() => ({
   card: { paddingTop: 12, paddingBottom: 0, gap: 8 },
-  header: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  title: { flexShrink: 1 },
+  range: { flexShrink: 0 },
 }));
