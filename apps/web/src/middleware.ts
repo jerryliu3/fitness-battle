@@ -93,7 +93,11 @@ function isPublicRankingsReadApi(pathname: string, method: string): boolean {
   if (method !== "GET" && method !== "HEAD") return false;
   if (pathname === "/api/rankings") return true;
   if (!pathname.startsWith("/api/rankings/")) return false;
-  return !pathname.startsWith("/api/rankings/saved") && !pathname.startsWith("/api/rankings/race-requests");
+  return (
+    !pathname.startsWith("/api/rankings/saved") &&
+    !pathname.startsWith("/api/rankings/race-requests") &&
+    !pathname.startsWith("/api/rankings/missing-results")
+  );
 }
 
 export async function middleware(request: NextRequest) {

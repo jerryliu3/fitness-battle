@@ -35,6 +35,7 @@ import {
 import { RaceRouteArtNative, SplitSparklineNative } from "../ui/observatory-race-card";
 import { ObservatorySportBar } from "../ui/observatory-sport-bar";
 import { RequestRaceCta } from "../ui/request-race-cta";
+import { MissingResultCta } from "../ui/missing-result-cta";
 import { SearchField } from "../ui/search-field";
 import { AppText, textStyle } from "../ui/section";
 
@@ -635,21 +636,36 @@ export function ObservatoryTab({
                     </AppText>
                     <View style={s.raceCardActions}>
                       <Pressable
-                        onPress={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
-                        style={[s.cardActionPrimary, isSelected && { backgroundColor: c.tennis }]}
+                        disabled={!hasGps}
+                        onPress={() =>
+                          onOpenReplay({
+                            editionId: ed.edition_id,
+                            distanceSlug: distance,
+                            sex,
+                          })
+                        }
+                        style={[s.cardActionPrimary, !hasGps && { opacity: 0.4 }]}
+                        accessibilityLabel={`View Replay for ${ed.event_name}`}
                       >
-                        <AppText role="nav" style={{ color: isSelected ? c.textOnAction : c.ink }}>
-                          {isSelected ? "Exploring" : "Explore"}
+                        <AppText role="nav" style={{ color: c.textOnAction }}>
+                          View Replay
+                        </AppText>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
+                        style={[s.cardActionBtn, isSelected && s.cardActionInk]}
+                      >
+                        <AppText role="nav" style={{ color: isSelected ? c.card : c.ink }}>
+                          {isSelected ? "✓ Exploring" : "Explore"}
                         </AppText>
                       </Pressable>
                       <Pressable
                         onPress={() => toggleOverlayEdition(ed.edition_id)}
-                        style={[s.cardActionBtn, isComparing && s.cardActionGold]}
+                        style={[s.cardIconBtn, isComparing && s.cardActionInk]}
+                        accessibilityLabel={isComparing ? `Remove ${ed.event_name} from comparison` : `Compare ${ed.event_name}`}
                       >
                         {isComparing ? (
-                          <AppText role="nav" style={{ color: c.textOnAction }}>
-                            Compare
-                          </AppText>
+                          <AppText role="nav" style={{ color: c.card }}>✓</AppText>
                         ) : (
                           <AppIcon name="plus" size={14} color={c.ink} />
                         )}
@@ -660,20 +676,6 @@ export function ObservatoryTab({
                         accessibilityLabel={isSavedEdition ? "Unsave race" : "Save race"}
                       >
                         <AppIcon name="special" size={14} color={isSavedEdition ? c.textOnAction : c.muted} />
-                      </Pressable>
-                      <Pressable
-                        disabled={!hasGps}
-                        onPress={() =>
-                          onOpenReplay({
-                            editionId: ed.edition_id,
-                            distanceSlug: distance,
-                            sex,
-                          })
-                        }
-                        style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
-                        accessibilityLabel={`Replay ${ed.event_name}`}
-                      >
-                        <AppIcon name="play" size={13} color={c.ink} />
                       </Pressable>
                     </View>
                   </View>
@@ -686,11 +688,20 @@ export function ObservatoryTab({
 
       {/* Athlete Index Header + Inline Search */}
       <View style={s.indexHeader}>
-        <AppText role="heading">
-          {edition && selectedEditionMeta
-            ? `${formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year)}`
-            : "Athlete index"}
-        </AppText>
+        <View style={{ gap: 2 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <AppText role="heading">
+              {edition && selectedEditionMeta
+                ? `${formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year)}`
+                : "Athlete index"}
+            </AppText>
+            <MissingResultCta
+              surface="observatory"
+              defaultRace={selectedEditionMeta ? formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year) : ""}
+            />
+          </View>
+          <AppText role="caption" secondary>Missing a result?</AppText>
+        </View>
         <View style={s.searchRow}>
           <View style={{ flex: 1 }}>
             <SearchField
@@ -959,20 +970,36 @@ export function ObservatoryTab({
                       </AppText>
                     </Pressable>
                   ) : (
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      <Pressable onPress={() => selectScopeEdition(ed.edition_id)} style={s.goldBtn}>
-                        <AppText role="nav" style={{ color: c.textOnAction }}>Explore</AppText>
-                      </Pressable>
+                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                       <Pressable
                         disabled={!hasGps}
                         onPress={() => {
                           setModalMode(null);
                           onOpenReplay({ editionId: ed.edition_id, distanceSlug: distance, sex });
                         }}
-                        style={[s.cardIconBtn, !hasGps && { opacity: 0.35 }]}
-                        accessibilityLabel={`Replay ${ed.event_name}`}
+                        style={[s.goldBtn, !hasGps && { opacity: 0.4 }]}
+                        accessibilityLabel={`View Replay for ${ed.event_name}`}
                       >
-                        <AppIcon name="play" size={13} color={c.ink} />
+                        <AppText role="nav" style={{ color: c.textOnAction }}>View Replay</AppText>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
+                        style={[s.cardActionBtn, isSelected && s.cardActionInk]}
+                      >
+                        <AppText role="nav" style={{ color: isSelected ? c.card : c.ink }}>
+                          {isSelected ? "✓ Exploring" : "Explore"}
+                        </AppText>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => toggleOverlayEdition(ed.edition_id)}
+                        style={[s.cardIconBtn, isComparing && s.cardActionInk]}
+                        accessibilityLabel={isComparing ? `Remove ${ed.event_name} from comparison` : `Compare ${ed.event_name}`}
+                      >
+                        {isComparing ? (
+                          <AppText role="nav" style={{ color: c.card }}>✓</AppText>
+                        ) : (
+                          <AppIcon name="plus" size={14} color={c.ink} />
+                        )}
                       </Pressable>
                     </View>
                   )}
@@ -1102,7 +1129,7 @@ const sThemes = createThemedStyles(c => ({
     flex: 1,
     height: 32,
     borderRadius: 999,
-    backgroundColor: c.soft,
+    backgroundColor: c.tennis,
     borderWidth: 1,
     borderColor: c.tennis,
     alignItems: "center",
@@ -1121,6 +1148,10 @@ const sThemes = createThemedStyles(c => ({
   cardActionGold: {
     backgroundColor: c.tennis,
     borderColor: c.tennis,
+  },
+  cardActionInk: {
+    backgroundColor: c.ink,
+    borderColor: c.ink,
   },
   cardIconBtn: {
     width: 32,

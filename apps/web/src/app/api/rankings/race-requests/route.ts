@@ -1,40 +1,20 @@
-import { serverEnv } from "@/lib/env";
 import { resolveRequestUser } from "@/lib/auth/request-user";
+import {
+  checkSupportRateLimit,
+  isHoneypotTriggered,
+  isSupportEmailConfigured,
+  resolveSurface,
+  sendSupportEmail,
+  validateOptionalContact,
+  validateSameOrigin,
+} from "@/lib/rankings/support-submission";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 5;
 const rateBuckets = new Map<string, number[]>();
 
-function clientKey(request: Request, userId?: string): string {
-  if (userId) return `u:${userId}`;
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  return `ip:${forwarded || realIp || "unknown"}`;
-}
-
-function isRateLimited(key: string, now = Date.now()): boolean {
-  const cutoff = now - RATE_WINDOW_MS;
-  const recent = (rateBuckets.get(key) ?? []).filter((ts) => ts > cutoff);
-  if (recent.length >= RATE_MAX) {
-    rateBuckets.set(key, recent);
-    return true;
-  }
-  recent.push(now);
-  rateBuckets.set(key, recent);
-  if (rateBuckets.size > 500) {
-    for (const [k, list] of rateBuckets) {
-      if (list.every((ts) => ts <= cutoff)) rateBuckets.delete(k);
-    }
-  }
-  return false;
-}
-
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) {
-    return Response.json({ error: "Please submit your request from the app." }, { status: 403 });
-  }
+  const originError = validateSameOrigin(request);
+  if (originError) return originError;
+
   if (Number(request.headers.get("content-length")) > 16000) {
     return Response.json({ error: "Your request is too long." }, { status: 413 });
   }
@@ -44,8 +24,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
-  // Honeypot for automated bots
-  if (typeof body.website === "string" && body.website.trim().length > 0) {
+  if (isHoneypotTriggered(body as Record<string, unknown>)) {
     return Response.json({ sent: true });
   }
 
@@ -54,36 +33,31 @@ export async function POST(request: Request) {
     return Response.json({ error: "Enter the race name or details in 2–2,000 characters." }, { status: 400 });
   }
 
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  if (name.length > 120) {
-    return Response.json({ error: "Name must be 120 characters or fewer." }, { status: 400 });
+  const contact = validateOptionalContact(body.name, body.email);
+  if ("error" in contact) {
+    return Response.json({ error: contact.error }, { status: 400 });
   }
 
-  const email = typeof body.email === "string" ? body.email.trim() : "";
-  if (email && (email.length > 254 || !EMAIL_RE.test(email))) {
-    return Response.json({ error: "Enter a valid email address or leave it blank." }, { status: 400 });
-  }
-
-  const surface = body.surface === "observatory" || body.surface === "replay" ? body.surface : "pace";
+  const surface = resolveSurface(body.surface);
   const user = await resolveRequestUser(request).catch(() => null);
 
-  if (isRateLimited(clientKey(request, user?.id))) {
+  if (checkSupportRateLimit(rateBuckets, request, user?.id)) {
     return Response.json({ error: "Too many race requests. Please try again in a few minutes." }, { status: 429 });
   }
 
-  if (!serverEnv.resendApiKey || !serverEnv.issueReportFrom) {
+  if (!isSupportEmailConfigured()) {
     return Response.json(
       { error: "Race requests are temporarily unavailable. Please try again later." },
       { status: 503 },
     );
   }
 
-  const replyTo = email || user?.email || undefined;
+  const replyTo = contact.email || user?.email || undefined;
   const metaLines = [
     `Surface: ${surface}`,
     user?.id ? `Account: ${user.id}` : "Account: Guest",
-    name ? `Name: ${name}` : null,
-    email ? `Email: ${email}` : user?.email ? `Account email: ${user.email}` : null,
+    contact.name ? `Name: ${contact.name}` : null,
+    contact.email ? `Email: ${contact.email}` : user?.email ? `Account email: ${user.email}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -91,22 +65,12 @@ export async function POST(request: Request) {
   const subjectRace = race.replace(/\s+/g, " ").slice(0, 80);
 
   try {
-    const result = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${serverEnv.resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: serverEnv.issueReportFrom,
-        to: [serverEnv.issueReportTo],
-        reply_to: replyTo,
-        subject: `Overtaek race request: ${subjectRace}`,
-        text: `${metaLines}\n\n${race}`,
-      }),
-      signal: AbortSignal.timeout(10000),
+    const ok = await sendSupportEmail({
+      replyTo,
+      subject: `Overtaek race request: ${subjectRace}`,
+      text: `${metaLines}\n\n${race}`,
     });
-    if (!result.ok) throw new Error("delivery_failed");
+    if (!ok) throw new Error("delivery_failed");
     return Response.json({ sent: true });
   } catch {
     return Response.json({ error: "We couldn't send your request. Please try again." }, { status: 502 });
