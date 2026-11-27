@@ -53,7 +53,9 @@ describe("native earned progress flows",()=>{
   const boostBtn=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="3× Effort Boost")!;
   await act(async()=>boostBtn.props.onPress());
   expect(mock.navigate).not.toHaveBeenCalled();
-  expect(JSON.stringify(renderer.toJSON())).toContain("Effort Boost");
+  expect(boostBtn.findByType("Text" as never).children.join("")).toBe("3x boost");
+  const popup = renderer.root.findByProps({ testID: "boost-popup" });
+  expect(popup.findByType("Text" as never).children.join("")).toBe("28 days left");
  });
  it("lets a multi-session day select a session and requires confirmation before removal",async()=>{
   const remove=vi.fn();await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[recorded("run",3600),recorded("strength",1800,"strength")],onRemove:remove}));});

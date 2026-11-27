@@ -29,7 +29,7 @@ const s=useThemedStyles(sThemes);
 
   const {state,accountKey,canWrite,saveError}=useCompeteStore();
   const router=useRouter(), reduced=useReducedMotion();
-  const boostMenu = useAnchoredMenu({ minWidth: 184, estimatedHeight: 68, placement: "below" });
+  const boostMenu = useAnchoredMenu({ minWidth: 104, estimatedHeight: 40, placement: "below" });
     const [,refreshClock]=useState(0);
   useEffect(()=>{
     let timer:ReturnType<typeof setTimeout>;
@@ -86,6 +86,11 @@ const model=state?effortPointProgress(state,state.primary,competitionTrack(state
             <Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text>
             <Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text>
           </Pressable>
+        </View>
+        <View style={s.row}>
+          <Pressable style={s.compactTrackTap} accessibilityRole="button" accessibilityLabel={progressLabel} onPress={openProgress}>
+            {trackEl}
+          </Pressable>
           {boost && (
             <View ref={boostMenu.anchorRef} collapsable={false} style={{ flexShrink: 0 }}>
               <Pressable
@@ -96,14 +101,11 @@ const model=state?effortPointProgress(state,state.primary,competitionTrack(state
                 onPress={boostMenu.toggle}
                 style={({ pressed }) => [s.multiplierBtn, pressed && { opacity: 0.78 }]}
               >
-                <Text style={s.multiplier}>✦ {boost.label}</Text>
+                <Text style={s.multiplier} numberOfLines={1}>{boost.label.replace("×", "x")} boost</Text>
               </Pressable>
             </View>
           )}
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={progressLabel} onPress={openProgress}>
-          {trackEl}
-        </Pressable>
         {gainEl}
         {boost && (
           <AnchoredMenu
@@ -114,8 +116,7 @@ const model=state?effortPointProgress(state,state.primary,competitionTrack(state
             accessibilityLabel="Close Effort Boost details"
             style={s.boostPopup}
           >
-            <Text style={s.boostPopupTitle}>✦ {boost.label} Effort Boost</Text>
-            <Text style={s.boostPopupBody}>{boostDays} {boostDays === 1 ? "day" : "days"} left · Faster Effort progression</Text>
+            <Text style={s.boostPopupBody}>{boostDays} {boostDays === 1 ? "day" : "days"} left</Text>
           </AnchoredMenu>
         )}
       </View>
@@ -129,4 +130,4 @@ const model=state?effortPointProgress(state,state.primary,competitionTrack(state
     {gainEl}
   </Pressable>;
 }
-const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},railCompact:{borderWidth:0,backgroundColor:"transparent",padding:0,gap:4,minHeight:0,justifyContent:"center",flex:1,width:"100%"},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:6},compactScoreTap:{flexDirection:"row",alignItems:"baseline",gap:4,flexShrink:1,flex:1,minWidth:0},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},trackCompact:{height:20,borderRadius:8,backgroundColor:c.soft,overflow:"hidden",width:"100%",alignSelf:"stretch"},fill:{height:"100%",borderRadius:8,minHeight:20},gain:{position:"absolute",right:8,top:0,borderRadius:8,paddingHorizontal:8,paddingVertical:4},multiplierBtn:{borderRadius:6,backgroundColor:c.tennis,paddingHorizontal:6,paddingVertical:2},multiplier:{...textStyle("label"),color:c.textOnAction,fontVariant:["tabular-nums"]},boostPopup:{paddingHorizontal:12,paddingVertical:10,gap:3},boostPopupTitle:{...textStyle("label"),color:c.ink},boostPopupBody:{...textStyle("caption"),color:c.muted},gainText:{...textStyle("label"),color:c.textOnAction}};});
+const sThemes = createThemedStyles(themeColors=>{const c=themeColors;return {rail:{marginHorizontal:0,marginBottom:0,padding:10,gap:5,borderWidth:1,borderColor:c.line,borderRadius:12,backgroundColor:c.card,minHeight:64},railCompact:{borderWidth:0,backgroundColor:"transparent",padding:0,gap:4,minHeight:0,justifyContent:"center",flex:1,width:"100%"},row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:6},compactScoreTap:{flexDirection:"row",alignItems:"baseline",gap:4,flexShrink:1,flex:1,minWidth:0},compactTrackTap:{flex:1,minWidth:0},caption:{ ...textStyle("caption"), color: c.muted },score:{ ...textStyle("label"), color: c.ink, fontVariant: ["tabular-nums"] },track:{height:24,borderRadius:8,backgroundColor:c.soft,overflow:"hidden"},trackCompact:{height:20,borderRadius:8,backgroundColor:c.soft,overflow:"hidden",width:"100%",alignSelf:"stretch"},fill:{height:"100%",borderRadius:8,minHeight:20},gain:{position:"absolute",right:8,top:0,borderRadius:8,paddingHorizontal:8,paddingVertical:4},multiplierBtn:{borderRadius:6,backgroundColor:c.tennis,paddingHorizontal:6,paddingVertical:2},multiplier:{...textStyle("label"),color:c.textOnAction,fontVariant:["tabular-nums"]},boostPopup:{paddingHorizontal:12,paddingVertical:10},boostPopupBody:{...textStyle("caption"),color:c.muted},gainText:{...textStyle("label"),color:c.textOnAction}};});

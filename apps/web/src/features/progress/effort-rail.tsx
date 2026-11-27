@@ -62,7 +62,7 @@ function EffortHeaderControls({ score, fraction, remaining, boost, gain, reduced
           aria-label={`${boost.label} Effort Boost`} aria-expanded={open === "boost"}
           aria-controls={open === "boost" ? popupId : undefined}
           onClick={() => setOpen(open === "boost" ? null : "boost")}>
-          <span aria-hidden="true">✦</span> {boost.label}
+          {boost.label.replace("×", "x")} boost
         </button>
         {open === "boost" && <div className="effort-header-popup" id={popupId}>{days} {days === 1 ? "day" : "days"} left</div>}
       </div>}

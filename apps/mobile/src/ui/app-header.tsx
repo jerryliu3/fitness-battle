@@ -6,14 +6,18 @@ import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Platform, PlatformColor, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
-import { weeklyActivityStreak, competeNow, buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId } from "@fitness-battle/shared";
+import { MEDAL_GOLD, weeklyActivityStreak, competeNow, buildDebugSpecialEventCeremony, DEBUG_EVENT_OPTIONS, DEBUG_SPECIAL_EVENT_PREVIEWS, type DebugEventId, type DebugSpecialEventPreviewId } from "@fitness-battle/shared";
 import { SpecialEventCeremony } from "../features/special-event-ceremony";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 
+
+const streakGold = Platform.OS === "ios" && typeof PlatformColor === "function"
+  ? PlatformColor(MEDAL_GOLD.iosColorName, { fallback: MEDAL_GOLD.srgb })
+  : MEDAL_GOLD.srgb;
 
 export function AppHeader() {
 const c=useThemeColors();
@@ -62,7 +66,7 @@ const s=useThemedStyles(sThemes);
             <EffortRail compact />
           </View>
           {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={s.streak}>
-            <View style={{ opacity: streak.active ? 1 : .4 }}><AppIcon name={streak.active ? "flameFilled" : "flame"} size={22} color={c.actionPressed} /></View>
+            <View style={{ opacity: streak.active ? 1 : .4 }}><AppIcon name={streak.active ? "flameFilled" : "flame"} size={22} color={streakGold} /></View>
             <Text style={s.debugBtnText}>{streak.count}</Text>
           </View>}
         </View>
