@@ -24,6 +24,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { useRaceFavorites } from "./favorites";
 import { RequestRaceCta } from "./request-race-cta";
+import { MissingResultCta } from "./missing-result-cta";
 import { computeSplitMetrics, SportFilterBar, SPORTS, type SportId } from "./sport-filter-bar";
 
 type Query = ReturnType<typeof raceQuery>;
@@ -1428,18 +1429,30 @@ export function RaceExplorer({
                   <div className="ovt-race-actions" onClick={e => e.stopPropagation()}>
                     <button
                       type="button"
-                      className={`ovt-btn ${isSelected ? "gold" : "primary"}`}
+                      className="ovt-btn primary"
+                      disabled={!hasReplayMap}
+                      onClick={() => openInReplayStudio(ed.edition_id, distance)}
+                      title={hasReplayMap ? "Open in Replay Studio" : "GPS course replay is not available for this edition"}
+                    >
+                      View Replay
+                    </button>
+                    <button
+                      type="button"
+                      className={`ovt-btn ${isSelected ? "ink" : ""}`}
+                      aria-pressed={isSelected}
                       onClick={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
                     >
                       {isSelected ? "✓ Exploring" : "Explore"}
                     </button>
                     <button
                       type="button"
-                      className={`ovt-btn ${isComparing ? "gold" : ""}`}
+                      className={`ovt-btn icon ${isComparing ? "ink" : ""}`}
                       onClick={() => toggleOverlayEdition(ed.edition_id)}
-                      title={isComparing ? "Remove comparison curve" : "Overlay race distribution"}
+                      aria-pressed={isComparing}
+                      aria-label={isComparing ? `Remove ${formatEditionDisplay(ed.event_name, ed.edition_year)} from comparison` : `Compare ${formatEditionDisplay(ed.event_name, ed.edition_year)}`}
+                      title={isComparing ? "Remove comparison curve" : "Compare race distribution"}
                     >
-                      {isComparing ? "✓ Compare" : "＋ Compare"}
+                      {isComparing ? "✓" : "+"}
                     </button>
                     <button
                       type="button"
@@ -1450,16 +1463,6 @@ export function RaceExplorer({
                     >
                       {isSavedEdition ? "★" : "☆"}
                     </button>
-                    <button
-                      type="button"
-                      className="ovt-btn icon"
-                      disabled={!hasReplayMap}
-                      onClick={() => openInReplayStudio(ed.edition_id, distance)}
-                      title={hasReplayMap ? "Open in Replay Studio" : "GPS course replay is not available for this edition"}
-                      aria-label={`Open ${ed.event_name} in Replay Studio`}
-                    >
-                      ▶
-                    </button>
                   </div>
                 </div>
               </article>
@@ -1469,13 +1472,19 @@ export function RaceExplorer({
       )}
 
       <div className="ovt-athlete-head">
-        <AppHeading level={2} role="heading">
-          {edition
-            ? selectedEditionMeta
-              ? `${formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year)} rankings`
-              : "Race rankings"
-            : "Athlete index"}
-        </AppHeading>
+        <div className="ovt-mini-title-lead">
+          <AppHeading level={2} role="heading">
+            {edition
+              ? selectedEditionMeta
+                ? `${formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year)} rankings`
+                : "Race rankings"
+              : "Athlete index"}
+          </AppHeading>
+          <MissingResultCta
+            surface="observatory"
+            defaultRace={selectedEditionMeta ? formatEditionDisplay(selectedEditionMeta.event_name, selectedEditionMeta.edition_year) : ""}
+          />
+        </div>
 
         <form
           className="ovt-athlete-search-bar"
@@ -1802,22 +1811,30 @@ export function RaceExplorer({
                           <>
                             <button
                               type="button"
-                              className={`ovt-btn ${isComparing ? "gold" : ""}`}
-                              onClick={() => toggleOverlayEdition(ed.edition_id)}
-                            >
-                              {isComparing ? "✓ Compare" : "＋ Compare"}
-                            </button>
-                            <button type="button" className="ovt-btn primary" onClick={() => selectScopeEdition(ed.edition_id)}>
-                              Explore ↗
-                            </button>
-                            <button
-                              type="button"
-                              className="ovt-btn"
+                              className="ovt-btn primary"
                               disabled={!coursePreviews[`${ed.edition_id}:${ed.distance_slug}`]}
                               title={coursePreviews[`${ed.edition_id}:${ed.distance_slug}`] ? "Open in Replay Studio" : "GPS course replay unavailable"}
                               onClick={() => openInReplayStudio(ed.edition_id, distance)}
                             >
-                              ▶ Replay
+                              View Replay
+                            </button>
+                            <button
+                              type="button"
+                              className={`ovt-btn ${isSelected ? "ink" : ""}`}
+                              aria-pressed={isSelected}
+                              onClick={() => selectScopeEdition(isSelected ? null : ed.edition_id)}
+                            >
+                              {isSelected ? "✓ Exploring" : "Explore"}
+                            </button>
+                            <button
+                              type="button"
+                              className={`ovt-btn icon ${isComparing ? "ink" : ""}`}
+                              onClick={() => toggleOverlayEdition(ed.edition_id)}
+                              aria-pressed={isComparing}
+                              aria-label={isComparing ? `Remove ${formatEditionDisplay(ed.event_name, ed.edition_year)} from comparison` : `Compare ${formatEditionDisplay(ed.event_name, ed.edition_year)}`}
+                              title={isComparing ? "Remove comparison curve" : "Compare race distribution"}
+                            >
+                              {isComparing ? "✓" : "+"}
                             </button>
                           </>
                         )}
