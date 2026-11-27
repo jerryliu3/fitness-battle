@@ -220,7 +220,7 @@ function RefreshHint({ offset, reveal, reduced }: {
       pointerEvents="none"
       style={[styles.hint, { backgroundColor: c.paper }, motion]}
     >
-      <AppText role="caption" secondary>↓ Pull to refresh</AppText>
+      <AppText role="caption" secondary>↓ Pull to sync</AppText>
     </Animated.View>
   );
 }
