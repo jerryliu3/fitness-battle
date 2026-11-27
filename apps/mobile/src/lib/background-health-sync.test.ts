@@ -111,4 +111,18 @@ describe("background-health-sync", () => {
     expect(await runBackgroundHealthSyncTask()).toBe(2); // NewData
     expect(mocks.syncHealthConnect).toHaveBeenCalledWith({ skipIfEmpty: true });
   });
+
+  it("no-ops safely when native ExpoTaskManager or ExpoBackgroundFetch are missing", async () => {
+    vi.resetModules();
+    vi.doMock("expo-task-manager", () => {
+      throw new Error("Cannot find native module 'ExpoTaskManager'");
+    });
+    vi.doMock("expo-background-fetch", () => {
+      throw new Error("Cannot find native module 'ExpoBackgroundFetch'");
+    });
+    const mod = await import("./background-health-sync");
+    expect(await mod.registerBackgroundHealthSync()).toBe(false);
+    expect(await mod.runBackgroundHealthSyncTask()).toBe(1);
+    await expect(mod.unregisterBackgroundHealthSync()).resolves.toBeUndefined();
+  });
 });

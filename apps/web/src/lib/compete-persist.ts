@@ -600,10 +600,19 @@ export async function loadCompeteAccount(
     };
   });
 
+  const rawEffortAccounts =
+    prefs.effort_accounts && typeof prefs.effort_accounts === "object" && !Array.isArray(prefs.effort_accounts)
+      ? (prefs.effort_accounts as CompeteState["effortAccounts"])
+      : undefined;
+  const effortAccounts =
+    rawEffortAccounts && Object.values(rawEffortAccounts).some((entry) => Boolean(entry && typeof entry === "object" && (entry as { state?: unknown }).state))
+      ? rawEffortAccounts
+      : undefined;
+
   state = withDerivedPendingReveals({
     ...state,
     requiresCanonicalFields: true,
-    effortAccounts: prefs.effort_accounts ?? undefined,
+    effortAccounts,
     periodResults,
     recordAttempts: attempts,
     effortScoreEvents,
