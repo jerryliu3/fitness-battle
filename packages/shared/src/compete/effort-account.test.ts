@@ -94,3 +94,19 @@ it('resets an older import at cutover and ignores that award on future account l
   expect(resetAccountEffort(reset, cutover, 45, importAward.weeklyVolumes)).toBe(reset);
   expect(reset.periodResults).toBe(original.periodResults);
 });
+
+it('repairs empty or partial effortAccounts without crashing settlement', () => {
+  const monday = new Date('2026-11-16T12:00:00Z');
+  const full = initializeEffortAccounts(freshState(monday), monday);
+  const emptyObjState = { ...freshState(monday), effortAccounts: {} };
+  const emptyRepaired = settleAccountEffort(emptyObjState, new Date('2026-11-23T05:00:00Z'));
+  expect(Object.keys(emptyRepaired.effortAccounts ?? {}).sort()).toEqual(['cycling', 'running', 'strength', 'walking']);
+
+  const partialState = {
+    ...freshState(monday),
+    effortAccounts: { running: full.effortAccounts!.running! },
+  };
+  const settledPartial = settleAccountEffort({ ...partialState, activities: [activity] }, new Date('2026-11-23T05:00:00Z'));
+  expect(Object.keys(settledPartial.effortAccounts ?? {}).sort()).toEqual(['cycling', 'running', 'strength', 'walking']);
+  expect(settledPartial.effortAccounts!.running!.state.calibrationSamples).toBe(1);
+});

@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, weeklyBoard, rollClock, prepareCompeteStateForAccount, buildArenaModel, type CrewBoardPin, type SportId } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ crew: vi.fn(), seat: vi.fn() }));
 vi.mock("./week-field", () => ({ loadCrewWeekFieldPin: mock.crew, seatWeekFieldPin: mock.seat }));
-import { hydrateFieldBoard, loadCompeteAccount, reconcileAccountSettlement } from "./compete-persist";
+import { hydrateFieldBoard, loadCompeteAccount, reconcileAccountSettlement, settleAccountFields } from "./compete-persist";
 const now = "2026-10-21T12:00:00.000Z", start = "2026-10-19T10:00:00.000Z", end = "2026-10-26T04:00:00.000Z";
 function pin(sport: SportId, crewId = "solo"): CrewBoardPin {
   return { sport, crewId, crewName: crewId === "solo" ? "Open Field" : "Cycling Crew", waveStart: start, weekEnd: end, capacity: 2, fieldId: `${sport}-field`,
@@ -108,4 +108,32 @@ it("corrects a device rollover using fresh closing scores before saving its resu
  const corrected = await reconcileAccountSettlement({} as never, "athlete", incoming, base, close);
  expect(corrected.periodResults.find(r => r.track === "verified")!.place).toBe(2);
  expect(corrected.enrollments.some(e => e.sport === "running")).toBe(false);
+});
+
+it("drops empty effort_accounts and fills missing sports so older clients receive all four sports", async () => {
+  const makeDb = (effort_accounts: unknown) => {
+    const rows: Record<string, unknown> = {
+      athlete_prefs: { clock_period_start: start, effort_accounts, updated_at: now },
+      profiles: { display_name: "Me", primary_sport: "running" },
+    };
+    return {
+      from: (table: string) => {
+        const result = { data: rows[table] ?? [], error: null };
+        const query = { select: () => query, eq: () => query, not: () => query, order: () => query, limit: () => query, range: () => query,
+          maybeSingle: () => Promise.resolve(result), then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve) };
+        return query;
+      },
+      rpc: () => Promise.resolve({ data: 1, error: null }),
+    };
+  };
+
+  const emptyLoaded = await loadCompeteAccount(makeDb({}) as never, "athlete");
+  expect(Object.keys(emptyLoaded!.state.effortAccounts ?? {}).sort()).toEqual(["cycling", "running", "strength", "walking"]);
+
+  const partialLoaded = await loadCompeteAccount(makeDb({
+    running: { state: { cumulativeNormalizedVolume: 0, baselineWeeklyVolume: 10000, peakObservedBaselineWeeklyVolume: 10000, calibrationSamples: 1, lastSettledWeekId: "2026-10-12" }, nextWeek: "2026-10-19" },
+  }) as never, "athlete");
+  expect(Object.keys(partialLoaded!.state.effortAccounts ?? {}).sort()).toEqual(["cycling", "running", "strength", "walking"]);
+  const repaired = await settleAccountFields(makeDb({}) as never, "athlete", partialLoaded!.state, new Date(now), true);
+  expect(Object.keys(repaired.effortAccounts ?? {}).sort()).toEqual(["cycling", "running", "strength", "walking"]);
 });

@@ -182,6 +182,24 @@ Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for
 
 **Runtime rule:** OTA bundles apply only when `app.json` `version` matches the installed binary. Bump `version` and run a **new store build** when you change native code or want a clean runtime fence.
 
+**Older-binary recovery:** The November 24 background-health change added
+`expo-background-fetch` and `expo-task-manager` while the OTA runtime was still
+0.3.0. Their package imports require native modules absent from the original
+0.3.0 binary and can terminate startup before any API request. Background health
+now probes both native modules before loading either package; unsupported binaries
+keep foreground sync and skip background registration. Task definition stays
+synchronous for binaries that support it.
+
+A normal main push now publishes runtime 0.4.0 and cannot repair 0.3.0 devices.
+After merging the compatibility fix, manually run **EAS Update (production)**
+with `runtime_version=0.3.0` to deliver the recovery bundle to those devices. The
+workflow changes the version only in its temporary checkout; it does not change
+the version used for new store builds. Verify recovery on an original 0.3.0
+store binary, with its existing account/cache, including a subsequent cold start.
+Do not republish unguarded native dependencies to an older runtime. This source
+fix alone does not publish an update or establish the cause of a particular
+device crash without its crash report.
+
 **Env rule:** Hosted Supabase + API URLs live in `app.json` → `extra` so every OTA bundle stays signed-in capable even when CI forgets `EXPO_PUBLIC_*`. CI and local `eas update` must still use `--environment production` (see `pnpm eas:update:production`). Without Supabase in the bundle, the app falls into offline demo mode: no Google/Apple buttons and no live profile data.
 
 **One-time cutover:** TestFlight / App Store builds created *before* OTA was enabled do not participate. Run one new `eas build` (production) after merging OTA config, then submit as usual.

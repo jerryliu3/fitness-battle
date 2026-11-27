@@ -90,16 +90,21 @@ export function startAccountEffort(state: CompeteState, award: HistoryEffortAwar
 
 /** Initializes from actual covered history; never translates legacy Elo into volume. */
 export function initializeEffortAccounts(state:CompeteState, now:Date):CompeteState {
-  if(state.effortAccounts)return state;
+  if(state.effortAccounts && SPORT_IDS.every(sport=>Boolean(state.effortAccounts?.[sport]?.state)))return state;
   const current=weeklyPeriodBounds(now).startsAt;
-  const effortAccounts:EffortAccounts={};
+  const effortAccounts:EffortAccounts={...state.effortAccounts};
   for(const sport of SPORT_IDS){
+    if(effortAccounts[sport]?.state)continue;
     const dates=state.activities.filter(a=>a.sport===sport&&countsForTraining(a)).map(a=>Date.parse(a.startedAt)).filter(t=>Number.isFinite(t)&&t<now.getTime());
     if(sport==='walking') dates.push(...(state.dailyHealth??[]).filter(d=>d.steps!=null).map(d=>Date.parse(`${d.day}T12:00:00Z`)).filter(t=>Number.isFinite(t)&&t<now.getTime()));
     const start=dates.length?weeklyPeriodBounds(new Date(Math.min(...dates))).startsAt:current;
     effortAccounts[sport]={state:createEmptyEffortState(),nextWeek:dayKey(start)};
   }
-  return {...state,effortAccounts,ratings:state.ratings.map(r=>({...r,openElo:0,verifiedElo:0}))};
+  return {
+    ...state,
+    effortAccounts,
+    ratings:state.ratings.map(r=>state.effortAccounts?.[r.sport]?.state?r:({...r,openElo:0,verifiedElo:0})),
+  };
 }
 
 /** Called after due canonical fields are resolved, before the atomic account save. */

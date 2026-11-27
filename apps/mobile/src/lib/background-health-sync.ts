@@ -1,12 +1,14 @@
-import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
+import type { BackgroundFetchResult } from "expo-background-fetch";
+import { backgroundHealthModules } from "./background-health-modules";
 import { Platform } from "react-native";
 import { syncAppleHealth, syncHealthConnect } from "./device-health";
 import { supabase } from "./supabase";
 
 export const BACKGROUND_HEALTH_SYNC_TASK = "overtaek-background-health-sync";
 
-export async function runBackgroundHealthSyncTask(): Promise<BackgroundFetch.BackgroundFetchResult> {
+export async function runBackgroundHealthSyncTask(): Promise<BackgroundFetchResult | undefined> {
+  if (!backgroundHealthModules) return;
+  const { BackgroundFetch } = backgroundHealthModules;
   if (Platform.OS !== "ios" && Platform.OS !== "android") {
     return BackgroundFetch.BackgroundFetchResult.NoData;
   }
@@ -30,13 +32,14 @@ export async function runBackgroundHealthSyncTask(): Promise<BackgroundFetch.Bac
   }
 }
 
-if (Platform.OS !== "web" && !TaskManager.isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
-  TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, runBackgroundHealthSyncTask);
+if (backgroundHealthModules && !backgroundHealthModules.TaskManager.isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
+  backgroundHealthModules.TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, runBackgroundHealthSyncTask);
 }
 
 /** Register periodic background health sync (iOS BackgroundFetch / Android WorkManager). */
 export async function registerBackgroundHealthSync(): Promise<boolean> {
-  if (Platform.OS !== "ios" && Platform.OS !== "android") return false;
+  if (!backgroundHealthModules || (Platform.OS !== "ios" && Platform.OS !== "android")) return false;
+  const { BackgroundFetch, TaskManager } = backgroundHealthModules;
   try {
     const status = await BackgroundFetch.getStatusAsync();
     if (
@@ -61,7 +64,8 @@ export async function registerBackgroundHealthSync(): Promise<boolean> {
 }
 
 export async function unregisterBackgroundHealthSync(): Promise<void> {
-  if (Platform.OS !== "ios" && Platform.OS !== "android") return;
+  if (!backgroundHealthModules || (Platform.OS !== "ios" && Platform.OS !== "android")) return;
+  const { BackgroundFetch, TaskManager } = backgroundHealthModules;
   try {
     const registered = await TaskManager.isTaskRegisteredAsync(
       BACKGROUND_HEALTH_SYNC_TASK,
