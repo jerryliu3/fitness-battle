@@ -53,6 +53,7 @@ vi.mock("expo-router", () => ({
   usePathname: () => mock.pathname,
 }));
 vi.mock("react-native", () => ({useColorScheme: () => "light",
+  Platform: { OS: "ios" },
   Text: "Text",
   View: "View",
   Pressable: "Pressable",
@@ -571,12 +572,22 @@ it("runs debug sync through review, actual application, full-screen combo and ac
   expect(api.state).toBe(original);
 });
 
-it("holds remote synced activity for review while preserving the server revision", async () => {
+it("holds background activity until pull presents it while preserving the server revision", async () => {
   login("alice"); await mount();
   const activity = { id: "remote-sync", sport: "running" as const, source: "strava" as const, startedAt: new Date().toISOString(), distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, provenance: "recorded" as const, disposition: "counted" as const };
   fetcher.mockResolvedValueOnce(Response.json({ state: { ...api.state, activities: [...api.state!.activities, activity] }, updatedAt: "remote-revision" }));
   await act(async () => { await api.refresh(); await flush(); });
   expect(api.state!.activities.some(a => a.id === activity.id)).toBe(false);
+  expect(api.hasPendingSyncReview).toBe(true);
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  fetcher.mockResolvedValueOnce(Response.json({ state: { ...api.state, city: "Updated", activities: [...api.state!.activities, activity] }, updatedAt: "remote-revision" }));
+  await act(async () => { await api.refresh(); });
+  expect(api.state?.city).toBe("Updated");
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  await act(async () => api.presentSyncReview("different-account"));
+  expect(api.hasPendingSyncReview).toBe(true);
+  await act(async () => { api.presentSyncReview("alice"); await flush(); });
+  expect(api.hasPendingSyncReview).toBe(false);
   const screen = renderer.root.findByType("SyncReview" as never);
   expect(screen.props.receipt.activities[0].id).toBe(activity.id);
   await act(async () => { screen.props.onComplete([activity.id]); });
@@ -676,6 +687,9 @@ it.each([true, false])("detects Garmin imports at startup only with a prior acco
   await mount();
   if (hasCache) {
     expect(api.state!.activities.some(a => a.id === activity.id)).toBe(false);
+    expect(api.hasPendingSyncReview).toBe(true);
+    expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+    await act(async () => { api.presentSyncReview("alice"); await flush(); });
     const screen = renderer.root.findByType("SyncReview" as never);
     expect(screen.props.receipt.activities.map((a: { id: string }) => a.id)).toEqual([activity.id]);
     await act(async () => { screen.props.onComplete([activity.id]); await flush(); });

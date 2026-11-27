@@ -33,10 +33,11 @@ export function useSyncReviewGate(
   current.current = { raw, state, account, onApply };
   const owner = useRef(account),
     batch = useRef(0),
-    pending = useRef<{ receipt: SyncReviewReceipt; actions: Action[]; beforeApply?: () => void } | null>(
+    pending = useRef<{ receipt: SyncReviewReceipt; actions: Action[]; beforeApply?: () => void; deferred?: boolean } | null>(
       null,
     );
   const [receipt, setReceipt] = useState<SyncReviewReceipt | null>(null);
+  const [waitingAccount, setWaitingAccount] = useState<string | null>(null);
   if (owner.current !== account) {
     owner.current = account;
     pending.current = null;
@@ -45,12 +46,14 @@ export function useSyncReviewGate(
   }
   useEffect(() => {
     setReceipt(null);
+    setWaitingAccount(null);
   }, [account]);
   const finish = useCallback((selected?: readonly string[], quiet = false) => {
     const value = pending.current;
     pending.current = null;
     blocked.current = false;
     setReceipt(null);
+    setWaitingAccount(null);
     if (!value || value.receipt.account !== current.current.account) return;
     if (selected && selected.length === 0) return;
     value.beforeApply?.();
@@ -66,6 +69,14 @@ export function useSyncReviewGate(
           ),
         )?.sport as SportId | undefined);
   }, [blocked]);
+  const present = useCallback((forAccount: string) => {
+    const value = pending.current;
+    if (!value?.deferred || value.receipt.account !== forAccount || current.current.account !== forAccount || batch.current > 0) return;
+    value.deferred = false;
+    blocked.current = value.actions.length > 0;
+    setWaitingAccount(null);
+    setReceipt({ ...value.receipt });
+  }, [blocked]);
   const flushExpired = useCallback(() => {
     const value = pending.current;
     if (
@@ -76,10 +87,10 @@ export function useSyncReviewGate(
       finish(undefined, true);
   }, [finish]);
   useEffect(() => {
-    if (!receipt) return;
+    if (!receipt && !waitingAccount) return;
     const timer = setInterval(flushExpired, 10000);
     return () => clearInterval(timer);
-  }, [receipt, flushExpired]);
+  }, [receipt, waitingAccount, flushExpired]);
   useEffect(() => {
     const listener = AppState.addEventListener("change", (status) => {
       if (status === "active") flushExpired();
@@ -120,9 +131,10 @@ export function useSyncReviewGate(
           preview: !actions.length,
         },
         actions,
+        deferred: previous?.receipt.preview ? undefined : previous?.deferred,
       };
       blocked.current = !!actions.length;
-      if (batch.current === 0) setReceipt({ ...pending.current.receipt });
+      if (batch.current === 0 && !pending.current.deferred) setReceipt({ ...pending.current.receipt });
     },
     [blocked],
   );
@@ -130,11 +142,17 @@ export function useSyncReviewGate(
     if (forAccount && forAccount !== current.current.account) return;
     batch.current++;
   }, []);
-  const end = useCallback((forAccount?: string) => {
+  const end = useCallback((forAccount?: string, defer = false) => {
     if (forAccount && forAccount !== current.current.account) return;
     batch.current = Math.max(0, batch.current - 1);
-    if (batch.current === 0 && pending.current)
-      setReceipt({ ...pending.current.receipt });
+    const value = pending.current;
+    if (batch.current > 0 || !value) return;
+    if (defer && !value.receipt.preview && value.deferred !== false) {
+      value.deferred = true;
+      setWaitingAccount(value.receipt.account);
+    } else if (!value.deferred) {
+      setReceipt({ ...value.receipt });
+    }
   }, []);
   const preview = useCallback(() => {
     const c = current.current;
@@ -152,23 +170,33 @@ export function useSyncReviewGate(
     };
     setReceipt({ ...pending.current.receipt });
   }, []);
-  const stage = (activities: Activity[], actions: Action[], beforeApply?: () => void, forState?: CompeteState) => {
+  const stage = (activities: Activity[], actions: Action[], beforeApply?: () => void, forState?: CompeteState, deferred = false) => {
     const c = current.current;
     const source = forState ?? c.state;
     if (!source) return;
-    pending.current = { receipt: { account: c.account, day: dayKey(competeNow(source)), activities, preview: false }, actions, beforeApply };
-    blocked.current = actions.length > 0;
-    setReceipt({ ...pending.current.receipt });
+    pending.current = { receipt: { account: c.account, day: dayKey(competeNow(source)), activities, preview: false }, actions, beforeApply, deferred };
+    blocked.current = !deferred && actions.length > 0;
+    setWaitingAccount(deferred ? c.account : null);
+    if (!deferred) setReceipt({ ...pending.current.receipt });
   };
-  const holdRemote = (next: CompeteState, known = current.current.state): CompeteState => {
+  const holdRemote = (next: CompeteState, known = current.current.state, defer = false, skip = false): CompeteState => {
     const c = current.current;
-    if (!known || pending.current) return next;
+    const previous = pending.current;
+    if (!known || (previous && !previous.deferred) || (skip && !previous)) return next;
+    const deferred = defer || Boolean(previous?.deferred);
     const activities = changedSyncActivities(next.activities, known.activities, competeNow(next)).filter(a => countsOnTrack(a, "open") && a.source !== "manual" && a.source !== "history");
-    if (!activities.length) return next;
+    if (!activities.length) {
+      if (pending.current?.deferred) {
+        pending.current = null;
+        setWaitingAccount(null);
+      }
+      return next;
+    }
     const actions: Action[] = [...new Set(activities.map(a => a.source))].filter((provider): provider is NonNullable<Action["provider"]> => provider !== "manual" && provider !== "history").map(provider => ({
       type: "apply-sync", provider, accountId: c.account ?? undefined, now: competeNow(next).toISOString(), activities: activities.filter(a => a.source === provider),
     }));
-    stage(activities, actions, undefined, next);
+    stage(activities, actions, undefined, next, deferred);
+    if (previous && pending.current) pending.current.receipt.day = previous.receipt.day;
     const held = new Set(activities.map(a => a.id));
     return { ...next, activities: [...next.activities.filter(a => !held.has(a.id)), ...known.activities.filter(a => held.has(a.id))] };
   };
@@ -178,10 +206,12 @@ export function useSyncReviewGate(
     holdRemote,
     preview,
     receipt: receipt?.account === account ? receipt : null,
+    waiting: waitingAccount !== null && waitingAccount === account,
+    present,
     finish,
     begin,
     end,
     flushExpired,
-    reset: () => { pending.current = null; blocked.current = false; batch.current = 0; setReceipt(null); },
+    reset: () => { pending.current = null; blocked.current = false; batch.current = 0; setReceipt(null); setWaitingAccount(null); },
   };
 }

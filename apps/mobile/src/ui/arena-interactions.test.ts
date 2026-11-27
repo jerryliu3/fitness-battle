@@ -2,6 +2,8 @@ vi.mock("react-native-reanimated", () => ({ default: { View: "AnimatedRow" }, Li
 vi.mock("../features/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: null, error: "" }) }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "", apiUrl: "" } }));
 vi.mock("./compete-sheet", () => ({ CompeteSheet: "CompeteSheet" }));
+vi.mock("./ember-refresh-scroll", () => ({ EmberRefreshScroll: "EmberRefreshScroll" }));
+vi.mock("../lib/use-activity-sync", () => ({ usePullRefresh: () => vi.fn() }));
 vi.mock("../features/field-timeline", () => ({ FieldTimeline: "FieldTimeline" }));
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));

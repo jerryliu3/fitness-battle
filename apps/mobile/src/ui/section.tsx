@@ -46,7 +46,7 @@ const styles=useThemedStyles(stylesThemes);
 
   return <View style={styles.heading}><AppText role="display" accessibilityRole="header">{title}</AppText>{subtitle && <AppText secondary>{subtitle}</AppText>}</View>;
 }
-export function Section({ title, titleRole, subtitle, action, children }: { title: string; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode; children: ReactNode }) {
+export function Section({ title, titleRole, subtitle, action, children }: { title: ReactNode; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode; children: ReactNode }) {
 const styles=useThemedStyles(stylesThemes);
 
   return <View style={styles.section}><SectionHeader title={title} titleRole={titleRole} subtitle={subtitle} action={action}/><View style={styles.content}>{children}</View></View>;

@@ -9,19 +9,20 @@ import {
 } from "@fitness-battle/shared";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import { DailyHealth } from "../../src/features/daily-health";
-import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { HomeDeck } from "../../src/features/home-deck";
 import { SessionStage } from "../../src/features/session-stage";
 import { WeekChart } from "../../src/features/week-chart";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { usePullRefresh } from "../../src/lib/use-activity-sync";
 import { createThemedStyles, useThemedStyles } from "../../src/theme";
 import { FocusSheet, useFocusStyles } from "../../src/ui/focus";
 import { AppText, SectionStack } from "../../src/ui/section";
 import { AppHeader } from "../../src/ui/app-header";
+import { EmberRefreshScroll } from "../../src/ui/ember-refresh-scroll";
 
 export default function Home() {
   const f = useFocusStyles();
@@ -29,6 +30,7 @@ export default function Home() {
 
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
+  const pullRefresh = usePullRefresh();
   const [removed, setRemoved] = useState<Activity | null>(null);
   const [sheet, setSheet] = useState<{
     items: Activity[];
@@ -74,8 +76,9 @@ export default function Home() {
     <SafeAreaView style={f.safe} edges={[]}>
       <AppHeader />
       <View style={s.homeStage}>
-        <ScrollView
-          style={s.homeOverlayScroll}
+        <EmberRefreshScroll
+          screen="home"
+          onRefresh={pullRefresh}
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
@@ -141,7 +144,7 @@ export default function Home() {
               }
             />
           </SectionStack>
-        </ScrollView>
+        </EmberRefreshScroll>
       </View>
 
       <FocusSheet
@@ -155,9 +158,6 @@ export default function Home() {
             state={state}
             activities={sheet.items}
             suggestion={sheet.isTodaySuggestion ? route.suggestion : undefined}
-            actions={
-              sheet.isTodaySuggestion ? <HomeActivityActions /> : undefined
-            }
             onRemove={(id) => {
               const target = sheet.items.find((a) => a.id === id) ?? null;
               setRemoved(target);
@@ -186,9 +186,6 @@ const sThemes = createThemedStyles((c) => ({
   homeStage: {
     flex: 1,
     position: "relative",
-  },
-  homeOverlayScroll: {
-    flex: 1,
   },
   homeOverlayContent: {
     paddingHorizontal: 20,

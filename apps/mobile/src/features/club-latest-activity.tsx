@@ -11,6 +11,7 @@ import { createThemedStyles, useThemedStyles } from "../theme";
 import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { prefetchActivityReplay } from "../lib/prefetch-activity-replay";
+import { HomeActivityActions } from "./home-activity-actions";
 import { useCrewActivities } from "./use-crew-activities";
 
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
@@ -28,13 +29,22 @@ const s=useThemedStyles(sThemes);
   const detailRoute = detail ? activityRoute(detail) : null;
   return <>
     <Section
-      title="Latest activity"
+      title={
+        <View style={s.heading}>
+          <AppText role="heading" accessibilityRole="header" style={s.headingText}>
+            Latest activity
+          </AppText>
+          <HomeActivityActions compact />
+        </View>
+      }
       action={
-        <TextAction
-          label="View all"
-          accessibilityLabel="View all activities"
-          onPress={() => router.push("/progress-history?tab=activities")}
-        />
+        <View style={s.viewAll}>
+          <TextAction
+            label="View all"
+            accessibilityLabel="View all activities"
+            onPress={() => router.push("/progress-history?tab=activities")}
+          />
+        </View>
       }
     >
       {rows.length > 0 ? (
@@ -97,6 +107,9 @@ const s=useThemedStyles(sThemes);
 }
 
 const sThemes = createThemedStyles((c) => ({
+  heading: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headingText: { flexShrink: 1 },
+  viewAll: { alignSelf: "center" },
   row: { minHeight: 76, paddingVertical: 12 },
   rowDivider: {
     borderBottomWidth: SHELL_SECTION.dividerWidth,
