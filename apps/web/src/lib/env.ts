@@ -21,6 +21,11 @@ export const webEnv = {
   mapboxAccessToken: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "",
   googleClientId:
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? DEFAULT_GOOGLE_WEB_CLIENT_ID,
+  posthogKey: process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim() ?? "",
+  posthogHost:
+    process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://us.i.posthog.com",
+  sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN?.trim() ?? "",
+  vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV?.trim() ?? "",
 };
 
 /** Server-only secrets. Import only from Route Handlers / server modules. */
@@ -60,4 +65,12 @@ export const serverEnv = {
    * Not required for basic sends; improves attribution and limits.
    */
   expoAccessToken: process.env.EXPO_ACCESS_TOKEN ?? "",
+  sentryDsn:
+    process.env.SENTRY_DSN?.trim() ||
+    process.env.NEXT_PUBLIC_SENTRY_DSN?.trim() ||
+    "",
+  posthogKey:
+    process.env.POSTHOG_API_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim() ||
+    "",
 };

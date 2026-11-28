@@ -1,3 +1,11 @@
+import { Sentry } from "../src/lib/sentry";
+import {
+  flushOtaCrashReport,
+  installOtaCrashHandler,
+  setOtaCrashRoute,
+} from "../src/lib/ota-crash";
+
+installOtaCrashHandler();
 import { MedalGoldStyles } from "../src/ui/medal-gold-styles";
 import { NavigationAppearance } from "../src/ui/navigation-appearance";
 import { AppearanceSync } from "../src/ui/appearance-sync";
@@ -35,6 +43,10 @@ import { registerBackgroundHealthSync } from "../src/lib/background-health-sync"
 import { AthleteBlocksProvider, useAthleteBlocks } from "../src/lib/athlete-blocks";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import {
+  MobilePostHogProvider,
+  MobileScreenTracker,
+} from "../src/lib/analytics";
+import {
   CompeteProvider,
   useCompeteFieldRefresh,
   useCompeteStore,
@@ -62,7 +74,11 @@ const SHELL_COLORS=useThemeColors();
 }
 
 function LiveFieldRefresh() {
-  const tab = shellTabFromPath(usePathname());
+  const pathname = usePathname();
+  useEffect(() => {
+    setOtaCrashRoute(pathname);
+  }, [pathname]);
+  const tab = shellTabFromPath(pathname);
   useCompeteFieldRefresh(tab?.id === "today" || tab?.id === "arena" || tab?.id === "field");
   return null;
 }
@@ -120,7 +136,7 @@ function NotificationNavigation() {
   return null;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return <AppThemeProvider><MedalGoldStyles /><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
 }
 
@@ -143,6 +159,7 @@ const SHELL_COLORS=useThemeColors();
 
   useEffect(() => {
     void applyExpoUpdateOnLaunch();
+    void flushOtaCrashReport();
   }, []);
 
   useEffect(() => {
@@ -204,8 +221,10 @@ const SHELL_COLORS=useThemeColors();
       <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
         <LaunchGate splashReady={fontsLoaded} fallback={fontFallback}>
           <HeroUINativeProvider>
-            <AuthProvider>
-              <AthleteBlocksProvider>
+            <MobilePostHogProvider>
+              <AuthProvider>
+                <MobileScreenTracker />
+                <AthleteBlocksProvider>
                 <ToastProvider>
                   <CompeteProvider navigationReady={fontsLoaded && screensMounted}>
                     {screensMounted ? (
@@ -232,9 +251,13 @@ const SHELL_COLORS=useThemeColors();
                 </ToastProvider>
               </AthleteBlocksProvider>
             </AuthProvider>
+            </MobilePostHogProvider>
           </HeroUINativeProvider>
         </LaunchGate>
       </View>
     </GestureHandlerRootView>
   );
 }
+
+export { ErrorBoundary } from "expo-router";
+export default Sentry.wrap(RootLayout);

@@ -61,4 +61,20 @@ export const mobileEnv = {
     process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ||
     extra.googleClientId?.trim() ||
     DEFAULT_GOOGLE_WEB_CLIENT_ID,
+  posthogKey:
+    process.env.EXPO_PUBLIC_POSTHOG_KEY?.trim() ||
+    extra.posthogKey?.trim() ||
+    "",
+  posthogHost:
+    process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() ||
+    extra.posthogHost?.trim() ||
+    "https://us.i.posthog.com",
+  sentryDsn:
+    process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ||
+    extra.sentryDsn?.trim() ||
+    "",
+  appEnv:
+    process.env.EXPO_PUBLIC_APP_ENV?.trim() ||
+    extra.appEnv?.trim() ||
+    "",
 };

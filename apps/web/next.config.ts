@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { withSentryConfig } = require("@sentry/nextjs");
+
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@fitness-battle/shared",
@@ -10,6 +13,19 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   // Supplied GPS fixtures are private development data, never deployment assets.
   outputFileTracingExcludes: { "/*": ["../../.local/**/*"] },
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/app/rankings/:path*", destination: "/app/pace/:path*", permanent: true },
@@ -31,4 +47,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG ?? "overtaek",
+  project: process.env.SENTRY_PROJECT ?? "overtaek-web",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+});
