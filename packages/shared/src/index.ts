@@ -114,3 +114,4 @@ export * from "./crew-derby";
 export * from "./standings";
 export * from "./special-events";
 export * from "./multiplier";
+export * from "./telemetry";
