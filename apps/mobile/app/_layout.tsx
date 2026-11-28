@@ -1,4 +1,11 @@
 import { Sentry } from "../src/lib/sentry";
+import {
+  flushOtaCrashReport,
+  installOtaCrashHandler,
+  setOtaCrashRoute,
+} from "../src/lib/ota-crash";
+
+installOtaCrashHandler();
 import { MedalGoldStyles } from "../src/ui/medal-gold-styles";
 import { NavigationAppearance } from "../src/ui/navigation-appearance";
 import { AppearanceSync } from "../src/ui/appearance-sync";
@@ -67,7 +74,11 @@ const SHELL_COLORS=useThemeColors();
 }
 
 function LiveFieldRefresh() {
-  const tab = shellTabFromPath(usePathname());
+  const pathname = usePathname();
+  useEffect(() => {
+    setOtaCrashRoute(pathname);
+  }, [pathname]);
+  const tab = shellTabFromPath(pathname);
   useCompeteFieldRefresh(tab?.id === "today" || tab?.id === "arena" || tab?.id === "field");
   return null;
 }
@@ -148,6 +159,7 @@ const SHELL_COLORS=useThemeColors();
 
   useEffect(() => {
     void applyExpoUpdateOnLaunch();
+    void flushOtaCrashReport();
   }, []);
 
   useEffect(() => {
