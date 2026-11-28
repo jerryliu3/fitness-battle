@@ -12,6 +12,7 @@ module.exports = ({ config }) => {
     ...(config.plugins ?? []),
     "./plugins/withOptionalPortraitAndroid.js",
     "./plugins/withMedalGold.js",
+    "expo-localization",
     [
       "@sentry/react-native/expo",
       {

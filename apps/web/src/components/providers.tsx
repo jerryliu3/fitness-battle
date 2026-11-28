@@ -4,6 +4,7 @@ import { AppearanceProvider } from "@/theme/appearance-provider";
 import { ThemeProvider } from "@/theme/theme-provider";
 import type { ReactNode } from "react";
 import { AuthProvider } from "./auth-context";
+import { PostHogTelemetryProvider } from "./posthog-provider";
 
 export function Providers({
   initialTheme,
@@ -16,7 +17,11 @@ export function Providers({
 }) {
   return (
     <ThemeProvider initialTheme={initialTheme}>
-      <AppearanceProvider initialAppearance={initialAppearance}><AuthProvider>{children}</AuthProvider></AppearanceProvider>
+      <AppearanceProvider initialAppearance={initialAppearance}>
+        <AuthProvider>
+          <PostHogTelemetryProvider>{children}</PostHogTelemetryProvider>
+        </AuthProvider>
+      </AppearanceProvider>
     </ThemeProvider>
   );
 }

@@ -36,6 +36,10 @@ import { registerBackgroundHealthSync } from "../src/lib/background-health-sync"
 import { AthleteBlocksProvider, useAthleteBlocks } from "../src/lib/athlete-blocks";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import {
+  MobilePostHogProvider,
+  MobileScreenTracker,
+} from "../src/lib/analytics";
+import {
   CompeteProvider,
   useCompeteFieldRefresh,
   useCompeteStore,
@@ -205,8 +209,10 @@ const SHELL_COLORS=useThemeColors();
       <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
         <LaunchGate splashReady={fontsLoaded} fallback={fontFallback}>
           <HeroUINativeProvider>
-            <AuthProvider>
-              <AthleteBlocksProvider>
+            <MobilePostHogProvider>
+              <AuthProvider>
+                <MobileScreenTracker />
+                <AthleteBlocksProvider>
                 <ToastProvider>
                   <CompeteProvider navigationReady={fontsLoaded && screensMounted}>
                     {screensMounted ? (
@@ -233,6 +239,7 @@ const SHELL_COLORS=useThemeColors();
                 </ToastProvider>
               </AthleteBlocksProvider>
             </AuthProvider>
+            </MobilePostHogProvider>
           </HeroUINativeProvider>
         </LaunchGate>
       </View>
