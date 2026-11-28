@@ -8,7 +8,19 @@ module.exports = ({ config }) => {
   }
   return ({
   ...config,
-  plugins: [...(config.plugins ?? []), "./plugins/withOptionalPortraitAndroid.js", "./plugins/withMedalGold.js"],
+  plugins: [
+    ...(config.plugins ?? []),
+    "./plugins/withOptionalPortraitAndroid.js",
+    "./plugins/withMedalGold.js",
+    [
+      "@sentry/react-native/expo",
+      {
+        url: "https://sentry.io/",
+        organization: "overtaek",
+        project: "overtaek-mobile",
+      },
+    ],
+  ],
   ios: { ...config.ios, infoPlist: { ...config.ios?.infoPlist, MGLMapboxMetricsEnabledSettingShownInApp: true } },
   extra: { ...config.extra, ...(mapboxAccessToken ? { mapboxAccessToken } : {}) },
   web: {

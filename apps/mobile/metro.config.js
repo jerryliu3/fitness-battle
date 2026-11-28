@@ -1,11 +1,11 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const { withUniwindConfig } = require("uniwind/metro");
 const path = require("path");
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
 
-const config = getDefaultConfig(projectRoot);
+const config = getSentryExpoConfig(projectRoot);
 // Vitals Lab WebView host: .iife is browser JS — never parse as RN modules (.js runs `document` at load).
 config.resolver.assetExts.push("html", "glb", "css", "iife");
 

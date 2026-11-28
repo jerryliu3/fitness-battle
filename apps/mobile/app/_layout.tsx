@@ -1,3 +1,4 @@
+import { Sentry } from "../src/lib/sentry";
 import { MedalGoldStyles } from "../src/ui/medal-gold-styles";
 import { NavigationAppearance } from "../src/ui/navigation-appearance";
 import { AppearanceSync } from "../src/ui/appearance-sync";
@@ -120,7 +121,7 @@ function NotificationNavigation() {
   return null;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return <AppThemeProvider><MedalGoldStyles /><AppearanceSync /><NavigationAppearance><RootContent /></NavigationAppearance></AppThemeProvider>;
 }
 
@@ -238,3 +239,6 @@ const SHELL_COLORS=useThemeColors();
     </GestureHandlerRootView>
   );
 }
+
+export { ErrorBoundary } from "expo-router";
+export default Sentry.wrap(RootLayout);
