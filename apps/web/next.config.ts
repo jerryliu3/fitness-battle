@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { withSentryConfig } = require("@sentry/nextjs");
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -52,5 +50,4 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT ?? "overtaek-web",
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  disableLogger: true,
 });
